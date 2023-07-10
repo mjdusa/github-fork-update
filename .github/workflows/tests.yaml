@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  workflow_dispatch:
+
+  workflow_call:
+
+  push:
+
+  pull_request:
+
+env:
+  target_ref: ${{ github.head_ref || github.ref_name }}
+  GO111MODULE: on
+  GOPRIVATE: ''
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        go-version: [1.20.x]
+        os: [ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: actions/checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.target_ref }}
+          token: ${{ github.token }}
+
+      - name: actions/setup-go
+        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: go version
+        run: |
+          go version
+          go env
+
+      - name: go clean --cache
+        run: go clean --cache
+
+      - name: go test -race -coverprofile=coverage.gcov -covermode=atomic ./...
+        run: |
+          go env
+          go test -race -coverprofile=coverage.gcov -covermode=atomic ./...
+
+      - name: jandelgado/gcov2lcov-action
+        uses: jandelgado/gcov2lcov-action@v1.0.9
+        with:
+          infile: coverage.gcov
+          outfile: coverage.lcov
+
+      - name: gdcorp-action-public-forks/very_good_coverage
+        uses: gdcorp-action-public-forks/very_good_coverage@03275e99cea6981679254681dbdb65b52155b88c # v1.1.1
+        with:
+          path: coverage.lcov
+          min_coverage: 85

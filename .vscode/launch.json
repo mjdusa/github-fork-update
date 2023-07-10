@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [    
+        {
+            "name": "Debug github-fork-update",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/github-fork-update/main.go",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "args": ["-auth=[github-auth-token]"],
+            "showLog": true,
+        },
+        {
+            "name": "Debug github-fork-update in verbose",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/github-fork-update/main.go",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "args": ["-auth=[github-auth-token]", "-verbose"],
+            "showLog": true,
+        }
+    ]
+}
