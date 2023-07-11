@@ -13,6 +13,6 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.0.0] - Feb. 1, 2021
+## [1.0.0] - April 5, 2023
 
 * Base release
