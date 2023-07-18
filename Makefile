@@ -71,7 +71,13 @@ endif
 clean:
 	@echo "clean"
 	@rm -rf $(BUILD_DIR)
-	@$(GOCLEAN) -cache -testcache -fuzzcache
+	@$(GOCLEAN) -cache -testcache -fuzzcache -x
+
+.PHONY: cleanall
+cleanall:
+	@echo "cleanall"
+	@rm -rf $(BUILD_DIR)
+	@$(GOCLEAN) -cache -testcache -fuzzcache -modcache -x
 
 .PHONY: $(BUILD_DIR)
 $(BUILD_DIR):
