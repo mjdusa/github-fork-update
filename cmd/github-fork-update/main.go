@@ -12,29 +12,43 @@ import (
 	"github.com/mjdusa/github-fork-update/internal/version"
 )
 
-func GetParameters() (string, bool, bool) {
-	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+const (
+	OsExistCode int = 1
+)
 
-	fs.SetOutput(os.Stderr)
+var PanicOnExit bool = false // Set to true to tell Exit() to Panic rather than call os.Exit() - should ONLY be used for testing
+
+func Exit(code int) {
+	if PanicOnExit {
+		panic(fmt.Sprintf("PanicOnExit is true, code=%d", code))
+	}
+
+	os.Exit(code)
+}
+
+func GetParameters() (string, bool, bool) {
+	flagSet := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	flagSet.SetOutput(os.Stderr)
 
 	var auth string
 	var debug bool
 	var verbose bool
 
 	// add flags
-	fs.StringVar(&auth, "auth", "", "GitHub Auth Token")
-	fs.BoolVar(&debug, "debug", false, "Log Debug")
-	fs.BoolVar(&verbose, "verbose", false, "Show Verbose Logging")
+	flagSet.StringVar(&auth, "auth", "", "GitHub Auth Token")
+	flagSet.BoolVar(&debug, "debug", false, "Log Debug")
+	flagSet.BoolVar(&verbose, "verbose", false, "Show Verbose Logging")
 
 	// Parse the flags
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		fs.Usage()
-		os.Exit(2)
+	if err := flagSet.Parse(os.Args[1:]); err != nil {
+		flagSet.Usage()
+		Exit(OsExistCode)
 	}
 
-	if len(auth) <= 0 {
-		fs.Usage()
-		os.Exit(2)
+	if len(auth) == 0 {
+		flagSet.Usage()
+		Exit(OsExistCode)
 	}
 
 	return auth, debug, verbose

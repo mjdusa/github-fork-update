@@ -1,12 +1,13 @@
 package main_test
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"testing"
 
 	main "github.com/mjdusa/github-fork-update/cmd/github-fork-update"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,98 +48,101 @@ func Call_GetParameters(s *GithubForkUpdateSuite) {
 }
 
 func (s *GithubForkUpdateSuite) Test_GetParameters() {
-	/*
-		ExpectedAuth := "foo-bar"
-		expectedVerboseFalse := false
-		expectedVerboseTrue := true
+	ExpectedAuth := "foo-bar"
+	expectedVerboseFalse := false
+	expectedVerboseTrue := true
 
-		testList := []TestGetParameters{
-			{
-				Description:     "Default has no values",
-				AuthFlag:        nil,
-				DebugFlag:       nil,
-				VerboseFlag:     nil,
-				ExpectedAuth:    "",
-				ExpectedDebug:   false,
-				ExpectedVerbose: false,
-			},
-			{
-				Description:     "Has only Token value",
-				AuthFlag:        &ExpectedAuth,
-				DebugFlag:       nil,
-				VerboseFlag:     nil,
-				ExpectedAuth:    ExpectedAuth,
-				ExpectedDebug:   false,
-				ExpectedVerbose: false,
-			},
-			{
-				Description:     "Has only Verbose value false",
-				AuthFlag:        nil,
-				DebugFlag:       nil,
-				VerboseFlag:     &expectedVerboseFalse,
-				ExpectedAuth:    "",
-				ExpectedDebug:   false,
-				ExpectedVerbose: expectedVerboseFalse,
-			},
-			{
-				Description:     "Has all values, Verbose value false",
-				AuthFlag:        &ExpectedAuth,
-				DebugFlag:       nil,
-				VerboseFlag:     &expectedVerboseFalse,
-				ExpectedAuth:    ExpectedAuth,
-				ExpectedDebug:   false,
-				ExpectedVerbose: expectedVerboseFalse,
-			},
-			{
-				Description:     "Has only Verbose value true",
-				AuthFlag:        nil,
-				DebugFlag:       nil,
-				VerboseFlag:     &expectedVerboseTrue,
-				ExpectedAuth:    "",
-				ExpectedDebug:   false,
-				ExpectedVerbose: expectedVerboseTrue,
-			},
-			{
-				Description:     "Has all values, Verbose value true",
-				AuthFlag:        &ExpectedAuth,
-				DebugFlag:       nil,
-				VerboseFlag:     &expectedVerboseTrue,
-				ExpectedAuth:    ExpectedAuth,
-				ExpectedDebug:   false,
-				ExpectedVerbose: expectedVerboseTrue,
-			},
+	testList := []TestGetParameters{
+		{
+			Description:     "Default has no values",
+			AuthFlag:        nil,
+			DebugFlag:       nil,
+			VerboseFlag:     nil,
+			ExpectedAuth:    "",
+			ExpectedDebug:   false,
+			ExpectedVerbose: false,
+		},
+		{
+			Description:     "Has only Token value",
+			AuthFlag:        &ExpectedAuth,
+			DebugFlag:       nil,
+			VerboseFlag:     nil,
+			ExpectedAuth:    ExpectedAuth,
+			ExpectedDebug:   false,
+			ExpectedVerbose: false,
+		},
+		{
+			Description:     "Has only Verbose value false",
+			AuthFlag:        nil,
+			DebugFlag:       nil,
+			VerboseFlag:     &expectedVerboseFalse,
+			ExpectedAuth:    "",
+			ExpectedDebug:   false,
+			ExpectedVerbose: expectedVerboseFalse,
+		},
+		{
+			Description:     "Has all values, Verbose value false",
+			AuthFlag:        &ExpectedAuth,
+			DebugFlag:       nil,
+			VerboseFlag:     &expectedVerboseFalse,
+			ExpectedAuth:    ExpectedAuth,
+			ExpectedDebug:   false,
+			ExpectedVerbose: expectedVerboseFalse,
+		},
+		{
+			Description:     "Has only Verbose value true",
+			AuthFlag:        nil,
+			DebugFlag:       nil,
+			VerboseFlag:     &expectedVerboseTrue,
+			ExpectedAuth:    "",
+			ExpectedDebug:   false,
+			ExpectedVerbose: expectedVerboseTrue,
+		},
+		{
+			Description:     "Has all values, Verbose value true",
+			AuthFlag:        &ExpectedAuth,
+			DebugFlag:       nil,
+			VerboseFlag:     &expectedVerboseTrue,
+			ExpectedAuth:    ExpectedAuth,
+			ExpectedDebug:   false,
+			ExpectedVerbose: expectedVerboseTrue,
+		},
+	}
+
+	for _, test := range testList {
+		os.Args = []string{"mainTest"}
+
+		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+		if test.AuthFlag != nil {
+			arg := fmt.Sprintf("-auth=%s", *test.AuthFlag)
+			os.Args = append(os.Args, arg)
 		}
 
-			for _, test := range testList {
-					os.Args = []string{"mainTest"}
+		if test.DebugFlag != nil && *test.DebugFlag {
+			os.Args = append(os.Args, "-debug")
+		}
 
-					flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+		if test.VerboseFlag != nil && *test.VerboseFlag {
+			os.Args = append(os.Args, "-verbose")
+		}
 
-					if test.AuthFlag != nil {
-						arg := fmt.Sprintf("-auth=%s", *test.AuthFlag)
-						os.Args = append(os.Args, arg)
-					}
+		if test.AuthFlag == nil || len(*test.AuthFlag) == 0 || len(test.ExpectedAuth) == 0 {
+			main.PanicOnExit = true
 
-					if test.DebugFlag != nil && *test.DebugFlag {
-						os.Args = append(os.Args, "-debug")
-					}
+			defer func() {
+				if r := recover(); r == nil {
+					s.T().Errorf("The code did not panic")
+				} else {
+					s.T().Logf("Recovered in %v", r)
+				}
+			}()
+		}
 
-					if test.VerboseFlag != nil && *test.VerboseFlag {
-						os.Args = append(os.Args, "-verbose")
-					}
+		actualAuth, actualDebug, actualVerbose := main.GetParameters()
 
-					actualAuth, actualDebug, actualVerbose := main.GetParameters()
-
-					assert.Equal(s.T(), test.ExpectedAuth, actualAuth, "GetParameters() Auth test '%s'", test.Description)
-					assert.Equal(s.T(), test.ExpectedDebug, actualDebug, "GetParameters() Debug test '%s'", test.Description)
-					assert.Equal(s.T(), test.ExpectedVerbose, actualVerbose, "GetParameters() Verbose test '%s'", test.Description)
-	*/
-	cmd := exec.Command(os.Args[0], "-test.run=Call_GetParameters")
-	err := cmd.Run()
-	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
-		//continue
-		return
+		assert.Equal(s.T(), test.ExpectedAuth, actualAuth, "GetParameters() Auth test '%s'", test.Description)
+		assert.Equal(s.T(), test.ExpectedDebug, actualDebug, "GetParameters() Debug test '%s'", test.Description)
+		assert.Equal(s.T(), test.ExpectedVerbose, actualVerbose, "GetParameters() Verbose test '%s'", test.Description)
 	}
-	//s.T().Fatalf("process ran with err %v, want exit status 1", err)
-	//}
 }
