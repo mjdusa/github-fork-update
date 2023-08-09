@@ -5,14 +5,14 @@
     "version": "0.2.0",
     "configurations": [    
         {
-            "name": "Debug github-fork-update",
+            "name": "Run github-fork-update",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/github-fork-update/main.go",
             "cwd": "${workspaceFolder}",
             "env": {},
-            "args": ["-auth=[github-auth-token]"],
+            "args": ["-auth=${env:GITHUB_AUTH}"],
             "showLog": true,
         },
         {
@@ -23,7 +23,18 @@
             "program": "${workspaceFolder}/cmd/github-fork-update/main.go",
             "cwd": "${workspaceFolder}",
             "env": {},
-            "args": ["-auth=[github-auth-token]", "-verbose"],
+            "args": ["-auth=${env:GITHUB_AUTH}", "-debug", "-verbose"],
+            "showLog": true,
+        },
+        {
+            "name": "Run github-fork-update in verbose",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/github-fork-update/main.go",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "args": ["-auth=${env:GITHUB_AUTH}", "-verbose"],
             "showLog": true,
         }
     ]

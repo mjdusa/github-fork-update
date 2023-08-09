@@ -5,46 +5,59 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/google/go-github/v53/github"
-	"github.com/mjdusa/github-fork-update/internal/tools"
+	"github.com/mjdusa/github-fork-update/internal/githubapi"
 	"github.com/mjdusa/github-fork-update/internal/version"
 )
 
-func GetUsage() string {
-	msg := "usage:\n"
-	msg += fmt.Sprintf("\t%s -auth='github-auth-token' [-verbose]\n\n", os.Args[0])
+func GetParameters() (string, bool, bool) {
+	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
-	return msg
-}
+	fs.SetOutput(os.Stderr)
 
-func GetParameters() (string, bool) {
-	// Define flags
-	token := flag.String("auth", "", "GitHub Auth Token")
-	verbose := flag.Bool("verbose", false, "Verbose")
+	var auth string
+	var debug bool
+	var verbose bool
+
+	// add flags
+	fs.StringVar(&auth, "auth", "", "GitHub Auth Token")
+	fs.BoolVar(&debug, "debug", false, "Log Debug")
+	fs.BoolVar(&verbose, "verbose", false, "Show Verbose Logging")
 
 	// Parse the flags
-	flag.Parse()
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		fs.Usage()
+		os.Exit(2)
+	}
 
-	return *token, *verbose
+	if len(auth) <= 0 {
+		fs.Usage()
+		os.Exit(2)
+	}
+
+	return auth, debug, verbose
 }
 
 func main() {
 	ctx := context.Background()
-	token, verbose := GetParameters()
+	auth, debugFlag, verboseFlag := GetParameters()
 
-	if verbose {
+	if verboseFlag {
 		fmt.Println(version.GetVersion())
 	}
 
-	if len(token) == 0 {
-		fmt.Println(GetUsage())
-		return
+	if debugFlag {
+		buildInfo, ok := debug.ReadBuildInfo()
+		if ok {
+			fmt.Println(buildInfo.String())
+		}
 	}
 
-	client := github.NewTokenClient(ctx, token)
+	client := github.NewTokenClient(ctx, auth)
 
-	err := tools.SyncForks(ctx, client, "", verbose)
+	err := githubapi.SyncForks(ctx, client, "", verboseFlag, debugFlag)
 	if err != nil {
 		panic(err)
 	}

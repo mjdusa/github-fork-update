@@ -1,4 +1,4 @@
-package tools_test
+package githubapi_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/v53/github"
-	"github.com/mjdusa/github-fork-update/internal/tools"
+	"github.com/mjdusa/github-fork-update/internal/githubapi"
 )
 
 func Test_ListOrganizations_success(t *testing.T) {
@@ -34,14 +34,14 @@ func Test_ListOrganizations_success(t *testing.T) {
 		Page: 2,
 	}
 
-	repos, err := tools.ListOrganizations(ctx, client, wantUser, opts)
+	repos, err := githubapi.ListOrganizations(ctx, client, wantUser, opts)
 	if err != nil {
-		t.Errorf("tools.ListOrganizations returned error: %v", err)
+		t.Errorf("githubapi.ListOrganizations returned error: %v", err)
 	}
 
 	want := []*github.Organization{{ID: github.Int64(1)}}
 	if !cmp.Equal(repos, want) {
-		t.Errorf("tools.ListOrganizations returned %+v, want %+v", repos, want)
+		t.Errorf("githubapi.ListOrganizations returned %+v, want %+v", repos, want)
 	}
 }
 
@@ -55,8 +55,8 @@ func Test_ListOrganizations_error(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	_, err := tools.ListOrganizations(ctx, client, wantUser, opts)
+	_, err := githubapi.ListOrganizations(ctx, client, wantUser, opts)
 	if err == nil {
-		t.Errorf("tools.ListOrganizations should have returned error")
+		t.Errorf("githubapi.ListOrganizations should have returned error")
 	}
 }
