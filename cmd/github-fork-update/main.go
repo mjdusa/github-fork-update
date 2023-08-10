@@ -27,17 +27,17 @@ func Exit(code int) {
 }
 
 func GetParameters() (string, bool, bool) {
-	flagSet := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	flagSet := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
 	flagSet.SetOutput(os.Stderr)
 
 	var auth string
-	var debug bool
+	var dbg bool
 	var verbose bool
 
 	// add flags
 	flagSet.StringVar(&auth, "auth", "", "GitHub Auth Token")
-	flagSet.BoolVar(&debug, "debug", false, "Log Debug")
+	flagSet.BoolVar(&dbg, "debug", false, "Log Debug")
 	flagSet.BoolVar(&verbose, "verbose", false, "Show Verbose Logging")
 
 	// Parse the flags
@@ -51,23 +51,23 @@ func GetParameters() (string, bool, bool) {
 		Exit(OsExistCode)
 	}
 
-	return auth, debug, verbose
-}
-
-func main() {
-	ctx := context.Background()
-	auth, debugFlag, verboseFlag := GetParameters()
-
-	if verboseFlag {
+	if verbose {
 		fmt.Println(version.GetVersion())
 	}
 
-	if debugFlag {
+	if dbg {
 		buildInfo, ok := debug.ReadBuildInfo()
 		if ok {
 			fmt.Println(buildInfo.String())
 		}
 	}
+
+	return auth, dbg, verbose
+}
+
+func main() {
+	ctx := context.Background()
+	auth, debugFlag, verboseFlag := GetParameters()
 
 	client := github.NewTokenClient(ctx, auth)
 
