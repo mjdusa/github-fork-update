@@ -23,7 +23,11 @@ var (
 )
 
 func GetVersion() string {
-	msg := fmt.Sprintf("%s version: [%s]\n", os.Args[0], AppVersion)
+	app := ""
+	if len(os.Args) > 0 {
+		app = os.Args[0]
+	}
+	msg := fmt.Sprintf("%s version: [%s]\n", app, AppVersion)
 	msg += fmt.Sprintf("- Branch:     [%s]\n", Branch)
 	msg += fmt.Sprintf("- Build Time: [%s]\n", BuildTime)
 	msg += fmt.Sprintf("- Commit:     [%s]\n", Commit)

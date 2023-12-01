@@ -297,15 +297,16 @@ func Test_SyncForks_success_no_update(t *testing.T) {
 
 func Test_SyncForks_nil_client(t *testing.T) {
 	want := fmt.Errorf("SyncForks error: client is nil")
+	if want == nil {
+		t.Errorf("Test_SyncForks_nil_client want shouldn't be nil")
+	}
 
 	ctx := context.Background()
 
 	err := githubapi.SyncForks(ctx, nil, "", true, false)
 	if err == nil {
 		t.Errorf("githubapi.SyncForks should have returned an error")
-	}
-
-	if strings.Compare(err.Error(), want.Error()) != 0 {
+	} else if strings.Compare(err.Error(), want.Error()) != 0 {
 		t.Errorf("githubapi.SyncForks returned %+v, want %+v", err, want)
 	}
 }
@@ -315,15 +316,16 @@ func Test_SyncForks_bad_userName(t *testing.T) {
 	defer teardown()
 
 	want := fmt.Errorf("client.Users.Get error:: parse \"users/%%\": invalid URL escape \"%%\"")
+	if want == nil {
+		t.Errorf("Test_SyncForks_bad_userName want shouldn't be nil")
+	}
 
 	ctx := context.Background()
 
 	err := githubapi.SyncForks(ctx, client, "%", true, false)
 	if err == nil {
 		t.Errorf("githubapi.SyncForks should have returned an error")
-	}
-
-	if strings.Compare(err.Error(), want.Error()) != 0 {
+	} else if strings.Compare(err.Error(), want.Error()) != 0 {
 		t.Errorf("githubapi.SyncForks returned %+v, want %+v", err, want)
 	}
 }

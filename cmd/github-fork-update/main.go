@@ -16,7 +16,7 @@ const (
 	OsExistCode int = 1
 )
 
-var PanicOnExit bool = false // Set to true to tell Exit() to Panic rather than call os.Exit() - should ONLY be used for testing
+var PanicOnExit = false // Set to true to tell Exit() to Panic rather than os.Exit() - ONLY use for testing
 
 func Exit(code int) {
 	if PanicOnExit {
@@ -27,7 +27,15 @@ func Exit(code int) {
 }
 
 func GetParameters() (string, bool, bool) {
-	flagSet := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	app := ""
+	if len(os.Args) > 0 {
+		app = os.Args[0]
+	}
+	args := []string{}
+	if len(os.Args) > 1 {
+		args = os.Args[1:]
+	}
+	flagSet := flag.NewFlagSet(app, flag.ContinueOnError)
 
 	flagSet.SetOutput(os.Stderr)
 
@@ -41,8 +49,7 @@ func GetParameters() (string, bool, bool) {
 	flagSet.BoolVar(&verbose, "verbose", false, "Show Verbose Logging")
 
 	// Parse the flags
-	if err := flagSet.Parse(os.Args[1:]); err != nil {
-		flagSet.Usage()
+	if err := flagSet.Parse(args); err != nil {
 		Exit(OsExistCode)
 	}
 

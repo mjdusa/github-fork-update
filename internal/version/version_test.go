@@ -20,7 +20,11 @@ func Test_GithubForkUpdate_Suite(t *testing.T) {
 }
 
 func (s *GithubForkUpdateSuite) Test_GetVersion_unpopulated() {
-	expected := fmt.Sprintf("%s version: []\n- Branch:     []\n- Build Time: []\n- Commit:     []\n- Go Version: []\n", os.Args[0])
+	app := ""
+	if len(os.Args) > 0 {
+		app = os.Args[0]
+	}
+	expected := fmt.Sprintf("%s version: []\n- Branch:     []\n- Build Time: []\n- Commit:     []\n- Go Version: []\n", app)
 
 	version.AppVersion = ""
 	version.Branch = ""
@@ -34,7 +38,11 @@ func (s *GithubForkUpdateSuite) Test_GetVersion_unpopulated() {
 }
 
 func (s *GithubForkUpdateSuite) Test_GetVersion_populated() {
-	expected := fmt.Sprintf("%s version: [v1.2.3]\n- Branch:     [main]\n- Build Time: [01/01/1970T00:00:00.0000 GMT]\n- Commit:     [1234567890abcdef]\n- Go Version: [1.20.5]\n", os.Args[0])
+	app := ""
+	if len(os.Args) > 0 {
+		app = os.Args[0]
+	}
+	expected := fmt.Sprintf("%s version: [v1.2.3]\n- Branch:     [main]\n- Build Time: [01/01/1970T00:00:00.0000 GMT]\n- Commit:     [1234567890abcdef]\n- Go Version: [1.20.5]\n", app)
 
 	version.AppVersion = "v1.2.3"
 	version.Branch = "main"

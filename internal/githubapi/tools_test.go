@@ -105,7 +105,11 @@ func Test_WrapError_GoodError(t *testing.T) {
 
 	want := fmt.Errorf("%s: %w", wrapMsg, innerErr)
 
-	if err.Error() != want.Error() {
+	if err == nil {
+		t.Errorf("githubapi.WrapError returned nil")
+	} else if want == nil {
+		t.Errorf("githubapi.WrapError returned %+v, but want is nil", err)
+	} else if err.Error() != want.Error() {
 		t.Errorf("githubapi.WrapError returned %+v, want %+v", err, want)
 	}
 }
