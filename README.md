@@ -55,7 +55,7 @@ make release
 
 [go_download_url]: https://golang.org/dl/
 [go_install_url]: https://golang.org/cmd/go/#hdr-Compile_and_install_packages_and_dependencies
-[go_version_img]: https://img.shields.io/badge/Go-1.20+-00ADD8?style=for-the-badge&logo=go
+[go_version_img]: https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go
 [go_report_img]: https://img.shields.io/badge/Go_report-A+-success?style=for-the-badge&logo=none
 [go_report_url]: https://goreportcard.com/report/github.com/mjdusa/github-fork-update
 [go_code_coverage_img]: https://img.shields.io/badge/code_coverage-88%25-success?style=for-the-badge&logo=none
