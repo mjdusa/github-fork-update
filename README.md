@@ -58,7 +58,7 @@ make release
 [go_version_img]: https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go
 [go_report_img]: https://img.shields.io/badge/Go_report-A+-success?style=for-the-badge&logo=none
 [go_report_url]: https://goreportcard.com/report/github.com/mjdusa/github-fork-update
-[go_code_coverage_img]: https://img.shields.io/badge/code_coverage-92%6-success?style=for-the-badge&logo=none
+[go_code_coverage_img]: https://img.shields.io/badge/code_coverage-92.6%25-success?style=for-the-badge&logo=none
 [go_dev_url]: https://pkg.go.dev/github.com/mjdusa/github-fork-update
 
 <!-- Repository -->
