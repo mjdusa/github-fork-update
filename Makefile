@@ -49,14 +49,10 @@ COVERAGE_REPORT = $(BUILD_DIR)/unit-test-coverage-$(BUILD_TS)
 # Rules
 .PHONY: install
 install:
-ifeq (,$(wildcard $(GOBIN)/golangci-lint))
 	@echo "Installing golangci-lint..."
 	@$(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-endif
-ifeq (,$(wildcard $(GOBIN)/gcov2lcov))
 	@echo "Installing gcov2lcov..."
 	@$(GOINSTALL) github.com/jandelgado/gcov2lcov@latest
-endif
 	@echo "Installing pre-commit"
 	@brew install pre-commit || true
 

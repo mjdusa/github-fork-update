@@ -64,3 +64,11 @@ jobs:
         with:
           path: coverage.lcov
           min_coverage: 85
+
+      # Upload generated artifacts for historical reference
+      - name: actions/upload-artifact
+        uses: actions/upload-artifact@v3  # v3 +
+        with:
+          name: test-reports
+          path: ./coverage.*
+          retention-days: 90

@@ -1,4 +1,4 @@
-package main_test
+package main
 
 import (
 	"flag"
@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	main "github.com/mjdusa/github-fork-update/cmd/github-fork-update"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -37,8 +36,8 @@ func Call_GetParameters(s *GithubForkUpdateSuite) {
 	os.Args = append(os.Args, "-debug")
 	os.Args = append(os.Args, "-verbose")
 
-	actualAuth, actualDebug, actualVerbose := main.GetParameters()
-	main.GetParameters()
+	actualAuth, actualDebug, actualVerbose := GetParameters()
+	GetParameters()
 
 	fmt.Println("inside")
 
@@ -65,7 +64,7 @@ func (s *GithubForkUpdateSuite) Test_GetParameters() {
 		{
 			Description:     "Has all values, Debug value false",
 			AuthFlag:        &ExpectedAuth,
-			DebugFlag:       expectedTrue,
+			DebugFlag:       expectedFalse,
 			VerboseFlag:     expectedFalse,
 			ExpectedAuth:    ExpectedAuth,
 			ExpectedDebug:   expectedFalse,
@@ -109,9 +108,9 @@ func (s *GithubForkUpdateSuite) Test_GetParameters() {
 			os.Args = append(os.Args, "-verbose")
 		}
 
-		main.PanicOnExit = false
+		_panicOnExit = false
 
-		actualAuth, actualDebug, actualVerbose := main.GetParameters()
+		actualAuth, actualDebug, actualVerbose := GetParameters()
 
 		assert.Equal(s.T(), test.ExpectedAuth, actualAuth, "GetParameters() Auth test '%s'", test.Description)
 		assert.Equal(s.T(), test.ExpectedDebug, actualDebug, "GetParameters() Debug test '%s'", test.Description)
@@ -128,7 +127,7 @@ func (s *GithubForkUpdateSuite) Test_GetParameters_AuthFlag_Empty() {
 	os.Args = append(os.Args, "-debug")
 	os.Args = append(os.Args, "-verbose")
 
-	main.PanicOnExit = true
+	_panicOnExit = true
 
 	defer func() {
 		if r := recover(); r == nil {
@@ -138,7 +137,7 @@ func (s *GithubForkUpdateSuite) Test_GetParameters_AuthFlag_Empty() {
 		}
 	}()
 
-	main.GetParameters()
+	GetParameters()
 
 	assert.Fail(s.T(), "Test_GetParameters_AuthFlag_Empty expected Panic to fire")
 }
@@ -153,7 +152,7 @@ func (s *GithubForkUpdateSuite) Test_GetParameters_FlagParse() {
 	os.Args = append(os.Args, "-verbose")
 	os.Args = append(os.Args, "-panic")
 
-	main.PanicOnExit = true
+	_panicOnExit = true
 
 	defer func() {
 		if r := recover(); r == nil {
@@ -163,7 +162,7 @@ func (s *GithubForkUpdateSuite) Test_GetParameters_FlagParse() {
 		}
 	}()
 
-	main.GetParameters()
+	GetParameters()
 
 	assert.Fail(s.T(), "Test_GetParameters_FlagParse expected Panic to fire")
 }

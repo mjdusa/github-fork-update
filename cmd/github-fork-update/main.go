@@ -16,11 +16,11 @@ const (
 	OsExistCode int = 1
 )
 
-var PanicOnExit = false // Set to true to tell Exit() to Panic rather than os.Exit() - ONLY use for testing
+var _panicOnExit = false //nolint:gochecknoglobals // Set to true to panic during unit tests
 
 func Exit(code int) {
-	if PanicOnExit {
-		panic(fmt.Sprintf("PanicOnExit is true, code=%d", code))
+	if _panicOnExit {
+		panic(fmt.Sprintf("_panicOnExit is true, code=%d", code))
 	}
 
 	os.Exit(code)
