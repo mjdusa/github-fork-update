@@ -67,7 +67,7 @@ jobs:
 
       # Upload generated artifacts for historical reference
       - name: actions/upload-artifact
-        uses: actions/upload-artifact@v3  # v3 +
+        uses: actions/upload-artifact@v4  # v3 +
         with:
           name: test-reports
           path: ./coverage.*
