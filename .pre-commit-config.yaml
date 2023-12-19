@@ -27,3 +27,10 @@ repos:
   hooks:
   - id: golangci-lint
     name: golangci-lint
+
+- repo: https://github.com/gitleaks/gitleaks
+  rev: v8.16.1
+  hooks:
+  - id: gitleaks
+    name: gitleaks
+    args: [--verbose, --pretty, --redact, --repo-config-path=.gitleaks.toml]  # --verbose, --pretty, --redact, --repo-config-path=.gitleaks.toml

@@ -20,7 +20,22 @@ When you clone this repository to your workstation, make sure to install the [pr
 ### Installing tools
 ```
 brew install pre-commit
+brew install gitleaks
+- or -
+git clone https://github.com/gitleaks/gitleaks.git
+cd gitleaks
+make build
 ```
+
+
+# MacOS
+brew install gitleaks
+
+
+# From Source
+git clone https://github.com/gitleaks/gitleaks.git
+cd gitleaks
+make build
 
 ### Check installed versions.
 ```
