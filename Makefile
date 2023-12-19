@@ -1,7 +1,7 @@
 # Use bash syntax
 SHELL=/bin/bash
 
-BUILD_TS:=$(shell date -u "+%Y-%m-%dT%TZ")
+BUILD_TS:=$(shell date -u "+%Y-%m-%dT%H%M%S%Z")
 BUILD_DIR:=dist
 
 APP_NAME:=github-fork-update
@@ -53,6 +53,8 @@ install:
 	@$(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@echo "Installing gcov2lcov..."
 	@$(GOINSTALL) github.com/jandelgado/gcov2lcov@latest
+	@echo "Installing gitleaks"
+	@brew install gitleaks || true
 	@echo "Installing pre-commit"
 	@brew install pre-commit || true
 
@@ -106,6 +108,11 @@ lint: init $(BUILD_DIR)
 	@${GOPATH}/bin/golangci-lint  run --verbose > "$(LINTER_REPORT)"
 #	cat "$(LINTER_REPORT)"
 
+.PHONY: gitleaks
+gitleaks: init $(BUILD_DIR)
+	@echo "Running gitleaks"
+	gitleaks detect --config=gitleaks.toml --source=. --redact --log-level=debug --report-format=json --report-path=$(BUILD_DIR)/gitleaks-$(BUILD_TS).out --verbose
+
 .PHONY: coverage
 coverage: init $(BUILD_DIR)
 	@echo "Running test coverage into $(COVERAGE_REPORT).gcov"
@@ -121,7 +128,7 @@ coverage: init $(BUILD_DIR)
 tests: coverage
 
 .PHONY: build
-build: prebuild lint tests
+build: prebuild lint gitleaks tests
 	$(GOBUILD) $(GOFLAGS) -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(APP_NAME) cmd/$(APP_NAME)/main.go
 
 .PHONY: debug

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"runtime/pprof"
 
 	"github.com/google/go-github/v53/github"
 	"github.com/mjdusa/github-fork-update/internal/githubapi"
@@ -76,10 +77,35 @@ func main() {
 	ctx := context.Background()
 	auth, debugFlag, verboseFlag := GetParameters()
 
+	if debugFlag {
+		cpuFile, cerr := os.Create("cpu-profile.pprof")
+		if cerr != nil {
+			panic(cerr)
+		}
+		defer cpuFile.Close()
+
+		memFile, merr := os.Create("mem-profile.pprof")
+		if merr != nil {
+			panic(merr)
+		}
+		defer memFile.Close()
+
+		serr := pprof.StartCPUProfile(cpuFile)
+		if serr != nil {
+			panic(serr)
+		}
+		defer pprof.StopCPUProfile()
+
+		werr := pprof.WriteHeapProfile(memFile)
+		if werr != nil {
+			panic(werr)
+		}
+	}
+
 	client := github.NewTokenClient(ctx, auth)
 
-	err := githubapi.SyncForks(ctx, client, "", verboseFlag, debugFlag)
-	if err != nil {
-		panic(err)
+	serr := githubapi.SyncForks(ctx, client, "", verboseFlag, debugFlag)
+	if serr != nil {
+		panic(serr)
 	}
 }

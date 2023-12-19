@@ -33,4 +33,4 @@ repos:
   hooks:
   - id: gitleaks
     name: gitleaks
-    args: [--verbose, --pretty, --redact, --repo-config-path=.gitleaks.toml]  # --verbose, --pretty, --redact, --repo-config-path=.gitleaks.toml
+    args: [ detect --config=.gitleaks.toml --source=. --redact --log-level=debug --report-format=json --report-path=dist/gitleaks.out --verbose]
