@@ -11,6 +11,7 @@
 *.so
 *.prof
 *.pprof
+*.pdf
 
 # Test binary, built with `go test -c`
 *.test

@@ -105,14 +105,13 @@ func main() {
 	client := github.NewTokenClient(ctx, auth)
 
 	serr := githubapi.SyncForks(ctx, client, "", verboseFlag, debugFlag)
-	if serr != nil {
-		panic(serr)
-	}
-
 	if debugFlag {
 		werr := pprof.WriteHeapProfile(memFile)
 		if werr != nil {
 			panic(werr)
 		}
+	}
+	if serr != nil {
+		panic(serr)
 	}
 }

@@ -27,16 +27,6 @@ cd gitleaks
 make build
 ```
 
-
-# MacOS
-brew install gitleaks
-
-
-# From Source
-git clone https://github.com/gitleaks/gitleaks.git
-cd gitleaks
-make build
-
 ### Check installed versions.
 ```
 pre-commit --version
@@ -65,6 +55,16 @@ make release
 ./dist/github-fork-update -auth=[github-auth-token]
 ```
 
+## Profiling
+
+### Prereq
+brew install graphviz
+
+### Creating PDF for CPU profiling
+go tool pprof -pdf ./dist/github-fork-update cpu-profile.pprof > cpu-profile.pdf
+
+### Creating PDF for memory profiling
+go tool pprof -pdf ./dist/github-fork-update mem-profile.pprof > mem-profile.pdf
 
 <!-- Go -->
 
