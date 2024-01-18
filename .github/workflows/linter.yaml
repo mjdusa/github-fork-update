@@ -35,6 +35,19 @@ jobs:
           ref: ${{ env.target_ref }}
           token: ${{ github.token }}
 
+      - name: actions/setup-go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: go version
+        run: |
+          go version
+
+      - name: go clean --cache
+        run: |
+          go clean --cache
+
       - name: golangci/golangci-lint-action
         uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
         with:
