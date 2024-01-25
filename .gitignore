@@ -35,6 +35,7 @@ tmp/
 .venv/
 
 # exclude go lang build destination directory
+build/
 dist/
 
 # exclude go lang vendor folder added in go 1.18

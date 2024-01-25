@@ -1,8 +1,9 @@
 # Use bash syntax
 SHELL=/bin/bash
 
-BUILD_TS:=$(shell date -u "+%Y-%m-%dT%H%M%S%Z")
-BUILD_DIR:=dist
+BUILD_TS:=$(shell date -u +"%Y-%m-%d_%H%M%S%Z")
+BUILD_DIR:=./build
+DIST_DIR:=./dist
 
 APP_NAME:=github-fork-update
 #APP_VERSION:=$(shell git describe --tags)
@@ -14,11 +15,12 @@ SUFFIX:=.git
 EMPTY:=
 
 # Git parameters
+GIT_BRANCH:=$(shell git rev-parse --abbrev-ref HEAD)
+GIT_COMMIT:=$(shell git rev-parse HEAD)
+GIT_REPO_DIR:=$(shell git rev-parse --show-toplevel)
 GIT_REPO_URL:=$(shell git config --get remote.origin.url)
 GIT_REPO:=$(subst $(PREFIX),$(EMPTY),$(subst $(SUFFIX),$(EMPTY),$(GIT_REPO_URL)))
-GIT_BRANCH:=$(shell git rev-parse --abbrev-ref HEAD)
-GIT_COMMIT=$(shell git rev-parse HEAD)
-GIT_TAG=$(shell git describe --abbrev=0 --tags)
+#GIT_TAG:=$(shell git describe --abbrev=0 --tags)
 
 # Go parameters
 GOCMD=go
@@ -69,17 +71,24 @@ endif
 clean:
 	@echo "clean"
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(DIST_DIR)
 	@$(GOCLEAN) -cache -testcache -fuzzcache -x
 
 .PHONY: cleanall
 cleanall:
 	@echo "cleanall"
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(DIST_DIR)
 	@$(GOCLEAN) -cache -testcache -fuzzcache -modcache -x
 
 .PHONY: $(BUILD_DIR)
 $(BUILD_DIR):
 	@echo "$(BUILD_DIR)"
+	@mkdir -p $@
+
+.PHONY: $(DIST_DIR)
+$(DIST_DIR):
+	@echo "$(DIST_DIR)"
 	@mkdir -p $@
 
 go.mod:
@@ -96,7 +105,7 @@ fmt:
 	@$(GOFMT) ./...
 
 .PHONY: prebuild
-prebuild: init clean $(BUILD_DIR) go.mod
+prebuild: init clean $(BUILD_DIR) $(DIST_DIR) go.mod
 	@echo "prebuild"
 	@$(GOCMD) version
 	@$(GOENV)
@@ -127,16 +136,16 @@ coverage: init $(BUILD_DIR)
 .PHONY: tests
 tests: coverage
 
-.PHONY: build
-build: prebuild lint gitleaks tests
-	$(GOBUILD) $(GOFLAGS) -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(APP_NAME) cmd/$(APP_NAME)/main.go
+.PHONY: gobuild
+gobuild: prebuild lint gitleaks tests
+	$(GOBUILD) $(GOFLAGS) -ldflags="$(LDFLAGS)" -o $(DIST_DIR)/$(APP_NAME) cmd/$(APP_NAME)/main.go
 
 .PHONY: debug
 debug: GOFLAGS += -x -v
-debug: clean build
+debug: clean gobuild
 
 .PHONY: release
-release: clean build
+release: clean gobuild
 
 .PHONY: pre-commit
 pre-commit: init
@@ -147,7 +156,8 @@ usage:
 	@echo "usage:"
 	@echo "  make [command]"
 	@echo "available commands:"
-	@echo "  clean - clean up build artifacts"
+	@echo "  clean - clean up build artifacts including 'go clean -cache -testcache -fuzzcache -x'"
+	@echo "  cleanall - same as clean except also performs 'go clean -modcache'"
 	@echo "  debug - build debug version of binary"
 	@echo "  help - show usage"
 	@echo "  install - install latest build app dependancies (ie: golangci-lint, gcov2lcov)"
