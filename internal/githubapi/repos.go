@@ -12,10 +12,10 @@ func ListRepositories(ctx context.Context, client *github.Client, user string,
 	opts *github.RepositoryListOptions) ([]*github.Repository, error) {
 	repos, _, err := client.Repositories.List(ctx, user, opts)
 	if err != nil {
-		err = WrapError("client.Repositories.List error:", err)
+		return nil, fmt.Errorf("client.Repositories.List error: %w", err)
 	}
 
-	return repos, err
+	return repos, nil
 }
 
 // ListForks lists the forks of the specified repository.
@@ -23,10 +23,10 @@ func ListForks(ctx context.Context, client *github.Client, owner string, repo st
 	opts *github.RepositoryListForksOptions) ([]*github.Repository, error) {
 	repos, _, err := client.Repositories.ListForks(ctx, owner, repo, opts)
 	if err != nil {
-		err = WrapError("client.Repositories.ListForks error:", err)
+		return nil, fmt.Errorf("client.Repositories.ListForks error: %w", err)
 	}
 
-	return repos, err
+	return repos, nil
 }
 
 // MergeUpstream merges the upstream repository into the fork for the specified branch.
@@ -38,17 +38,17 @@ func MergeUpstream(ctx context.Context, client *github.Client, owner string, rep
 
 	result, _, err := client.Repositories.MergeUpstream(ctx, owner, repo, &req)
 	if err != nil {
-		err = WrapError("client.Repositories.MergeUpstream", err)
+		return nil, fmt.Errorf("client.Repositories.MergeUpstream error: %w", err)
 	}
 
-	return result, err
+	return result, nil
 }
 
 func MergeUpstreamFork(ctx context.Context, client *github.Client, repoOwner string,
 	repoName string, repoBranch string, verbose bool) error {
 	res, err := MergeUpstream(ctx, client, repoOwner, repoName, repoBranch)
 	if err != nil {
-		return WrapError("MergeUpstream error:", err)
+		return fmt.Errorf("client.Repositories.MergeUpstreamFork error: %w", err)
 	}
 
 	if res.MergeType == nil || *res.MergeType == "none" {
@@ -69,7 +69,7 @@ func SyncForks(ctx context.Context, client *github.Client, userName string, verb
 
 	user, _, err := client.Users.Get(ctx, userName)
 	if err != nil {
-		return WrapError("client.Users.Get error:", err)
+		return fmt.Errorf("client.Users.Get error: %w", err)
 	}
 
 	page := 1
@@ -86,7 +86,7 @@ func SyncForks(ctx context.Context, client *github.Client, userName string, verb
 
 		repos, gerr := ListRepositories(ctx, client, *user.Login, &opts)
 		if gerr != nil {
-			return WrapError("ListRepositories error:", gerr)
+			return fmt.Errorf("ListRepositories error: %w", gerr)
 		}
 
 		if len(repos) == 0 {
@@ -95,9 +95,9 @@ func SyncForks(ctx context.Context, client *github.Client, userName string, verb
 
 		for _, repo := range repos {
 			if *repo.Fork {
-				err = MergeUpstreamFork(ctx, client, *repo.Owner.Login, *repo.Name, *repo.DefaultBranch, verboseFlag)
-				if err != nil {
-					return err
+				merr := MergeUpstreamFork(ctx, client, *repo.Owner.Login, *repo.Name, *repo.DefaultBranch, verboseFlag)
+				if merr != nil {
+					return fmt.Errorf("MergeUpstreamFork error: %w", merr)
 				}
 			} else if verboseFlag || debugFlag {
 				fmt.Printf("-> Repo '%s/%s %s' is not a fork, skipping...\n", *repo.Owner.Login, *repo.Name, *repo.DefaultBranch)

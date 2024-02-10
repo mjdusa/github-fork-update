@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/v53/github"
-	"github.com/mjdusa/github-fork-update/internal/githubapi"
 )
 
 type rateLimitCategory uint8
@@ -84,32 +83,5 @@ func testMethod(t *testing.T, r *http.Request, want string) {
 	t.Helper()
 	if got := r.Method; got != want {
 		t.Errorf("Request method: %v, want %v", got, want)
-	}
-}
-
-func Test_WrapError_nilError(t *testing.T) {
-	err := githubapi.WrapError("Test_WrapError_nilError message", nil)
-	if err != nil {
-		t.Errorf("githubapi.WrapError should be return nil")
-	}
-}
-
-func Test_WrapError_GoodError(t *testing.T) {
-	innerErrMsg := "Test_WrapError_GoodError__inner"
-	innerErr := fmt.Errorf(innerErrMsg)
-	wrapMsg := "Test_WrapError_GoodError message"
-	err := githubapi.WrapError(wrapMsg, innerErr)
-	if err == nil {
-		t.Errorf("githubapi.WrapError should NOT return nil when error is not nil")
-	}
-
-	want := fmt.Errorf("%s: %w", wrapMsg, innerErr)
-
-	if err == nil {
-		t.Errorf("githubapi.WrapError returned nil")
-	} else if want == nil {
-		t.Errorf("githubapi.WrapError returned %+v, but want is nil", err)
-	} else if err.Error() != want.Error() {
-		t.Errorf("githubapi.WrapError returned %+v, want %+v", err, want)
 	}
 }
