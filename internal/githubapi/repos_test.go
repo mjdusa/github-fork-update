@@ -315,7 +315,7 @@ func Test_SyncForks_bad_userName(t *testing.T) {
 	client, _, _, teardown := setup()
 	defer teardown()
 
-	want := fmt.Errorf("client.Users.Get error:: parse \"users/%%\": invalid URL escape \"%%\"")
+	want := fmt.Errorf("client.Users.Get error: parse \"users/%%\": invalid URL escape \"%%\"")
 	if want == nil {
 		t.Errorf("Test_SyncForks_bad_userName want shouldn't be nil")
 	}

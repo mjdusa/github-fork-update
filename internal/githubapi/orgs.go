@@ -2,6 +2,7 @@ package githubapi
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/go-github/v53/github"
 )
@@ -10,8 +11,8 @@ func ListOrganizations(ctx context.Context, client *github.Client, username stri
 	opts *github.ListOptions) ([]*github.Organization, error) {
 	orgs, _, err := client.Organizations.List(ctx, username, opts)
 	if err != nil {
-		err = WrapError("client.Organizations.List error:", err)
+		return nil, fmt.Errorf("client.Organizations.List error: %w", err)
 	}
 
-	return orgs, err
+	return orgs, nil
 }

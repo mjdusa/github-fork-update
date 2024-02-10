@@ -1,7 +1,7 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "comment_1": "Use IntelliSense to learn about possible attributes.",
+    "comment_2": "Hover to view descriptions of existing attributes.",
+    "comment_3": "For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387",
     "version": "0.2.0",
     "configurations": [    
         {
@@ -13,7 +13,7 @@
             "cwd": "${workspaceFolder}",
             "env": {},
             "args": ["-auth=${env:GITHUB_AUTH}"],
-            "showLog": true,
+            "showLog": true
         },
         {
             "name": "Debug github-fork-update in verbose",
@@ -24,7 +24,7 @@
             "cwd": "${workspaceFolder}",
             "env": {},
             "args": ["-auth=${env:GITHUB_AUTH}", "-debug", "-verbose"],
-            "showLog": true,
+            "showLog": true
         },
         {
             "name": "Run github-fork-update in verbose",
@@ -35,7 +35,7 @@
             "cwd": "${workspaceFolder}",
             "env": {},
             "args": ["-auth=${env:GITHUB_AUTH}", "-verbose"],
-            "showLog": true,
+            "showLog": true
         }
     ]
 }

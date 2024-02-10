@@ -107,34 +107,37 @@ fmt:
 .PHONY: prebuild
 prebuild: init clean $(BUILD_DIR) $(DIST_DIR) go.mod
 	@echo "prebuild"
-	@$(GOCMD) version
-	@$(GOENV)
+	$(GOCMD) version
+	$(GOENV)
+
+.PHONY: golangcilint
+golangcilint: init $(BUILD_DIR)
+	echo "Running golangci-lint"
+	${GOPATH}/bin/golangci-lint --version
+	${GOPATH}/bin/golangci-lint run --verbose --config .github/linters/.golangci.yml \
+	  --issues-exit-code 0 --out-format=checkstyle > "$(LINTER_REPORT)"
+	cat $(LINTER_REPORT)
 
 .PHONY: lint
-lint: init $(BUILD_DIR)
-	@echo "Running golangci-lint into $(LINTER_REPORT)"
-	@${GOPATH}/bin/golangci-lint  --version
-	@${GOPATH}/bin/golangci-lint  run --verbose > "$(LINTER_REPORT)"
-#	cat "$(LINTER_REPORT)"
+lint: golangcilint
 
 .PHONY: gitleaks
 gitleaks: init $(BUILD_DIR)
 	@echo "Running gitleaks"
 	gitleaks detect --config=gitleaks.toml --source=. --redact --log-level=debug --report-format=json --report-path=$(BUILD_DIR)/gitleaks-$(BUILD_TS).out --verbose
 
-.PHONY: coverage
-coverage: init $(BUILD_DIR)
-	@echo "Running test coverage into $(COVERAGE_REPORT).gcov"
-	@$(GOTEST) -race -covermode=atomic -coverprofile="$(COVERAGE_REPORT).gcov" -coverpkg=./... ./...
-	@echo "Converting $(COVERAGE_REPORT).gcov to $(COVERAGE_REPORT).lcov"
-	@gcov2lcov -infile "$(COVERAGE_REPORT).gcov" -outfile "$(COVERAGE_REPORT).lcov"
-	@echo "Reporting test coverage from $(COVERAGE_REPORT).gcov"
-	@$(GOTOOL) cover -func="$(COVERAGE_REPORT).gcov"
+.PHONY: unittest
+unittest: init $(BUILD_DIR)
+	$(GOENV)
+	$(GOCMD) test -race -coverprofile="$(COVERAGE_REPORT).gcov" -covermode=atomic ./...
 #	cat "$(COVERAGE_REPORT).gcov"
+	gcov2lcov -infile "$(COVERAGE_REPORT).gcov" -outfile "$(COVERAGE_REPORT).lcov"
 #	cat "$(COVERAGE_REPORT).lcov"
+	$(GOCMD) tool cover -func="$(COVERAGE_REPORT).gcov"
+#	$(GOCMD) tool cover -html="$(COVERAGE_REPORT).gcov"
 
 .PHONY: tests
-tests: coverage
+tests: unittest
 
 .PHONY: gobuild
 gobuild: prebuild lint gitleaks tests

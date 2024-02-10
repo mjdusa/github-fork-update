@@ -1,4 +1,5 @@
-name: Build
+---
+name: build
 
 on:
   workflow_dispatch:
@@ -16,33 +17,36 @@ env:
 
 jobs:
   build:
+    name: Build
     strategy:
       matrix:
-        go-version: [1.21.x]
+        go-version: ['oldstable', 'stable']
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
-    defaults:
-      run:
-        shell: bash
-
     steps:
       - name: actions/checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
         with:
           repository: ${{ github.repository }}
           ref: ${{ env.target_ref }}
           token: ${{ github.token }}
+          fetch-depth: 0
 
       - name: actions/setup-go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491  # v5.0.0
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: go version
         run: |
           go version
+          go env
+
+      - name: go mod tidy
+        run: |
+          go mod tidy
 
       - name: go clean --cache
         run: |
@@ -64,8 +68,13 @@ jobs:
 
       - name: go build
         run: |
-          echo "building"
           go env
           mkdir dist
           APP=github-fork-update
-          go build -x -v -ldflags="-s -w -X 'internal/version.AppVersion=${{ steps.prebuild.outputs.appversion }}' -X 'internal/version.Branch=${{ env.target_ref }}' -X 'internal/version.BuildTime=${{ steps.prebuild.outputs.buildtime }}' -X 'internal/version.Commit=${{ github.sha }}' -X 'internal/version.GoVersion=${{ steps.prebuild.outputs.goversion }}'" -o dist/${APP} cmd/${APP}/main.go
+          go build -x -v -ldflags="-s -w \
+            -X 'internal/version.AppVersion=${{ steps.prebuild.outputs.appversion }}' \
+            -X 'internal/version.Branch=${{ env.target_ref }}' \
+            -X 'internal/version.BuildTime=${{ steps.prebuild.outputs.buildtime }}' \
+            -X 'internal/version.Commit=${{ github.sha }}' \
+            -X 'internal/version.GoVersion=${{ steps.prebuild.outputs.goversion }}'" \
+            -o dist/${APP} cmd/${APP}/main.go
