@@ -45,7 +45,8 @@ jobs:
           fetch-depth: 0
 
       - name: super-linter/super-linter
-        uses: super-linter/super-linter@latest
+        uses: super-linter/super-linter@v5.7.2
+
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ github.token }}
