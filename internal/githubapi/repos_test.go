@@ -5,22 +5,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/v53/github"
 	"github.com/mjdusa/github-fork-update/internal/githubapi"
+	"github.com/mjdusa/github-fork-update/internal/http/httptest"
 )
 
 func Test_ListRepositories_success(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantUser := "Test_ListRepositories_success_user"
 	wantUrl := fmt.Sprintf("/users/%s/repos", wantUser)
 	wantAcceptHeaders := []string{"application/vnd.github.mercy-preview+json", "application/vnd.github.nebula-preview+json"}
-	mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		v := new(github.RepositoryListOptions)
 		json.NewDecoder(req.Body).Decode(v)
 		testMethod(t, req, "GET")
@@ -45,8 +50,12 @@ func Test_ListRepositories_success(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	repos, err := githubapi.ListRepositories(ctx, client, wantUser, opt)
+	repos, err := gha.ListRepositories(ctx, wantUser, opt)
 	if err != nil {
 		t.Errorf("githubapi.ListRepositories returned error: %v", err)
 	}
@@ -58,13 +67,16 @@ func Test_ListRepositories_success(t *testing.T) {
 }
 
 func Test_ListRepositories_error(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantUser := "Test_ListRepositories_error_user"
 	wantUrl := fmt.Sprintf("/users/%s/repos", wantUser)
 	wantAcceptHeaders := []string{"application/vnd.github.mercy-preview+json", "application/vnd.github.nebula-preview+json"}
-	mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		v := new(github.RepositoryListOptions)
 		json.NewDecoder(req.Body).Decode(v)
 		testMethod(t, req, "GET")
@@ -89,21 +101,28 @@ func Test_ListRepositories_error(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	_, err := githubapi.ListRepositories(ctx, client, wantUser, opt)
+	_, err := gha.ListRepositories(ctx, wantUser, opt)
 	if err == nil {
 		t.Errorf("githubapi.ListRepositories should have returned an error")
 	}
 }
 
 func Test_ListForks_success(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantOwner := "wantOwner"
 	wantRepo := "wantRepo"
 	wantUrl := fmt.Sprintf("/repos/%s/%s/forks", wantOwner, wantRepo)
-	mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		v := new(github.RepositoryListForksOptions)
 		json.NewDecoder(req.Body).Decode(v)
 		testMethod(t, req, "GET")
@@ -122,8 +141,12 @@ func Test_ListForks_success(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	repos, err := githubapi.ListForks(ctx, client, wantOwner, wantRepo, opt)
+	repos, err := gha.ListForks(ctx, wantOwner, wantRepo, opt)
 	if err != nil {
 		t.Errorf("githubapi.ListForks returned error: %v", err)
 	}
@@ -135,13 +158,16 @@ func Test_ListForks_success(t *testing.T) {
 }
 
 func Test_ListForks_error(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantOwner := "wantOwner"
 	wantRepo := "wantRepo"
 	wantUrl := fmt.Sprintf("/repos/%v/%v/forks", wantOwner, wantRepo)
-	mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		v := new(github.RepositoryListForksOptions)
 		json.NewDecoder(req.Body).Decode(v)
 		testMethod(t, req, "GET")
@@ -160,16 +186,23 @@ func Test_ListForks_error(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	_, err := githubapi.ListForks(ctx, client, wantOwner, wantRepo, opt)
+	_, err := gha.ListForks(ctx, wantOwner, wantRepo, opt)
 	if err == nil {
 		t.Errorf("githubapi.ListForks should have returned an error")
 	}
 }
 
 func Test_MergeUpstream_success(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantOwner := "Test_MergeUpstream_success_owner"
 	wantRepo := "Test_MergeUpstream_success_repo"
@@ -181,7 +214,7 @@ func Test_MergeUpstream_success(t *testing.T) {
 
 	wantUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", wantOwner, wantRepo)
 
-	mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur)
 		testMethod(t, req, "POST")
@@ -193,8 +226,12 @@ func Test_MergeUpstream_success(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	result, err := githubapi.MergeUpstream(ctx, client, wantOwner, wantRepo, wantBranch)
+	result, err := gha.MergeUpstream(ctx, wantOwner, wantRepo, wantBranch)
 	if err != nil {
 		t.Errorf("githubapi.MergeUpstream returned error: %v", err)
 	}
@@ -206,8 +243,11 @@ func Test_MergeUpstream_success(t *testing.T) {
 }
 
 func Test_MergeUpstream_error(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantOwner := "Test_MergeUpstream_error_owner"
 	wantRepo := "Test_MergeUpstream_error_repo"
@@ -219,7 +259,7 @@ func Test_MergeUpstream_error(t *testing.T) {
 
 	wantUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", wantOwner, wantRepo)
 
-	mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur)
 		testMethod(t, req, "POST")
@@ -231,8 +271,12 @@ func Test_MergeUpstream_error(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	_, err := githubapi.MergeUpstream(ctx, client, wantOwner, wantRepo, wantBranch)
+	_, err := gha.MergeUpstream(ctx, wantOwner, wantRepo, wantBranch)
 	if err == nil {
 		t.Errorf("githubapi.MergeUpstream should have returned an error")
 	}
@@ -241,8 +285,11 @@ func Test_MergeUpstream_error(t *testing.T) {
 var Test_SyncForks_success_no_update_getRepositories_HasFired = false
 
 func Test_SyncForks_success_no_update(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	owner := "Test_owner"
 	repo := "Test_repo"
@@ -255,7 +302,7 @@ func Test_SyncForks_success_no_update(t *testing.T) {
 
 	// setup for client.Users.Get(ctx, userName)
 	userUrl := "/user"
-	mux.HandleFunc(userUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(userUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		testMethod(t, req, "GET")
 		fmt.Fprint(wtr, userJson)
 	})
@@ -264,7 +311,7 @@ func Test_SyncForks_success_no_update(t *testing.T) {
 
 	// setup for client.Repositories.List(ctx, user, opts)
 	userRepoListUrl := fmt.Sprintf("/users/%s/repos", owner)
-	mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rlo := new(github.RepositoryListOptions)
 		json.NewDecoder(req.Body).Decode(rlo)
 		testMethod(t, req, "GET")
@@ -279,7 +326,7 @@ func Test_SyncForks_success_no_update(t *testing.T) {
 
 	// setup for client.Repositories.MergeUpstream(ctx, owner, repo, &req)
 	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur)
 		testMethod(t, req, "POST")
@@ -288,41 +335,36 @@ func Test_SyncForks_success_no_update(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	err := githubapi.SyncForks(ctx, client, "", true, false)
+	err := gha.SyncForks(ctx, "", true, false)
 	if err != nil {
 		t.Errorf("githubapi.SyncForks returned error: %v", err)
 	}
 }
 
-func Test_SyncForks_nil_client(t *testing.T) {
-	want := fmt.Errorf("SyncForks error: client is nil")
-	if want == nil {
-		t.Errorf("Test_SyncForks_nil_client want shouldn't be nil")
-	}
-
-	ctx := context.Background()
-
-	err := githubapi.SyncForks(ctx, nil, "", true, false)
-	if err == nil {
-		t.Errorf("githubapi.SyncForks should have returned an error")
-	} else if strings.Compare(err.Error(), want.Error()) != 0 {
-		t.Errorf("githubapi.SyncForks returned %+v, want %+v", err, want)
-	}
-}
-
 func Test_SyncForks_bad_userName(t *testing.T) {
-	client, _, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
-	want := fmt.Errorf("client.Users.Get error: parse \"users/%%\": invalid URL escape \"%%\"")
+	want := fmt.Errorf("api.client.Users.Get error: parse \"users/%%\": invalid URL escape \"%%\"")
 	if want == nil {
 		t.Errorf("Test_SyncForks_bad_userName want shouldn't be nil")
 	}
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	err := githubapi.SyncForks(ctx, client, "%", true, false)
+	err := gha.SyncForks(ctx, "%", true, false)
 	if err == nil {
 		t.Errorf("githubapi.SyncForks should have returned an error")
 	} else if strings.Compare(err.Error(), want.Error()) != 0 {
@@ -331,8 +373,11 @@ func Test_SyncForks_bad_userName(t *testing.T) {
 }
 
 func Test_SyncForks_bad_get(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	login := "Test_user"
 
@@ -340,14 +385,14 @@ func Test_SyncForks_bad_get(t *testing.T) {
 
 	// setup for client.Users.Get(ctx, userName)
 	userUrl := "/user"
-	mux.HandleFunc(userUrl, func(w http.ResponseWriter, r *http.Request) {
+	srvr.Mux.HandleFunc(userUrl, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		fmt.Fprint(w, userJson)
 	})
 
 	// setup for client.Repositories.List(ctx, user, opts)
 	userRepoListUrl := fmt.Sprintf("/users/%s/repos", login)
-	mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rlo := new(github.RepositoryListOptions)
 		json.NewDecoder(req.Body).Decode(rlo)
 		testMethod(t, req, "GET")
@@ -356,8 +401,12 @@ func Test_SyncForks_bad_get(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	err := githubapi.SyncForks(ctx, client, "", true, false)
+	err := gha.SyncForks(ctx, "", true, false)
 	if err == nil {
 		t.Errorf("githubapi.SyncForks should have returned an error")
 	}
@@ -366,8 +415,11 @@ func Test_SyncForks_bad_get(t *testing.T) {
 var Test_SyncForks_bad_merge_getRepositories_HasFired = false
 
 func Test_SyncForks_bad_merge(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	login := "Test_user"
 	owner := "Test_owner"
@@ -380,7 +432,7 @@ func Test_SyncForks_bad_merge(t *testing.T) {
 
 	// setup for client.Users.Get(ctx, userName)
 	userUrl := "/user"
-	mux.HandleFunc(userUrl, func(w http.ResponseWriter, r *http.Request) {
+	srvr.Mux.HandleFunc(userUrl, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		fmt.Fprint(w, userJson)
 	})
@@ -389,7 +441,7 @@ func Test_SyncForks_bad_merge(t *testing.T) {
 
 	// setup for client.Repositories.List(ctx, user, opts)
 	userRepoListUrl := fmt.Sprintf("/users/%s/repos", login)
-	mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rlo := new(github.RepositoryListOptions)
 		json.NewDecoder(req.Body).Decode(rlo)
 		testMethod(t, req, "GET")
@@ -404,7 +456,7 @@ func Test_SyncForks_bad_merge(t *testing.T) {
 
 	// setup for client.Repositories.MergeUpstream(ctx, owner, repo, &req)
 	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur)
 		testMethod(t, req, "POST")
@@ -413,16 +465,23 @@ func Test_SyncForks_bad_merge(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	err := githubapi.SyncForks(ctx, client, "", true, false)
+	err := gha.SyncForks(ctx, "", true, false)
 	if err == nil {
 		t.Errorf("githubapi.SyncForks should have returned an error")
 	}
 }
 
 func Test_MergeUpstreamFork_success_no_update(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	owner := "Test_owner"
 	repo := "Test_repo"
@@ -431,7 +490,7 @@ func Test_MergeUpstreamFork_success_no_update(t *testing.T) {
 	fullBranch := fmt.Sprintf("%s:%s", repo, branch)
 
 	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur)
 		testMethod(t, req, "POST")
@@ -440,16 +499,23 @@ func Test_MergeUpstreamFork_success_no_update(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	err := githubapi.MergeUpstreamFork(ctx, client, owner, repo, branch, true)
+	err := gha.MergeUpstreamFork(ctx, owner, repo, branch, true)
 	if err != nil {
 		t.Errorf("githubapi.SyncForks returned error: %v", err)
 	}
 }
 
 func Test_MergeUpstreamFork_success_fast_forward(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	owner := "Test_owner"
 	repo := "Test_repo"
@@ -458,7 +524,7 @@ func Test_MergeUpstreamFork_success_fast_forward(t *testing.T) {
 	fullBranch := fmt.Sprintf("%s:%s", repo, branch)
 
 	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur)
 		testMethod(t, req, "POST")
@@ -467,16 +533,23 @@ func Test_MergeUpstreamFork_success_fast_forward(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	err := githubapi.MergeUpstreamFork(ctx, client, owner, repo, branch, true)
+	err := gha.MergeUpstreamFork(ctx, owner, repo, branch, true)
 	if err != nil {
 		t.Errorf("githubapi.SyncForks returned error: %v", err)
 	}
 }
 
 func Test_MergeUpstreamFork_success_merge(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	owner := "Test_owner"
 	repo := "Test_repo"
@@ -485,7 +558,7 @@ func Test_MergeUpstreamFork_success_merge(t *testing.T) {
 	fullBranch := fmt.Sprintf("%s:%s", repo, branch)
 
 	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur)
 		testMethod(t, req, "POST")
@@ -494,8 +567,12 @@ func Test_MergeUpstreamFork_success_merge(t *testing.T) {
 	})
 
 	ctx := context.Background()
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
 
-	err := githubapi.MergeUpstreamFork(ctx, client, owner, repo, branch, true)
+	err := gha.MergeUpstreamFork(ctx, owner, repo, branch, true)
 	if err != nil {
 		t.Errorf("githubapi.SyncForks returned error: %v", err)
 	}

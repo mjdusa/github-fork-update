@@ -1,4 +1,4 @@
-package env
+package environment
 
 import (
 	"flag"
@@ -9,8 +9,15 @@ import (
 	"github.com/mjdusa/github-fork-update/internal/version"
 )
 
+type Environment struct {
+}
+
+func NewEnvironment() (*Environment, error) {
+	return &Environment{}, nil
+}
+
 // GetParameters returns the command line parameters with basic go flags.
-func GetParameters() (*string, *bool, *bool, error) {
+func (env *Environment) GetParameters() (*string, *bool, *bool, error) {
 	app := ""
 	if len(os.Args) > 0 {
 		app = os.Args[0]
@@ -40,13 +47,13 @@ func GetParameters() (*string, *bool, *bool, error) {
 	}
 
 	if len(auth) == 0 {
-		return nil, nil, nil, fmt.Errorf("error missing auth token")
+		return nil, nil, nil, fmt.Errorf("empty auth token error")
 	}
 
 	return &auth, &dbg, &verbose, nil
 }
 
-func Report(verbose bool, dbg bool) string {
+func (env *Environment) Report(verbose bool, dbg bool) string {
 	rpt := ""
 
 	if verbose {

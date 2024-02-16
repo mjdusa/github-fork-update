@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	put "github.com/mjdusa/github-fork-update/internal/version" // put - package under test
+	sut "github.com/mjdusa/github-fork-update/internal/version" // sut - system under test
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -15,7 +15,7 @@ type VersionSuite struct {
 	suite.Suite
 }
 
-func Test_VersionSuite(t *testing.T) {
+func TestVersionSuite(t *testing.T) {
 	suite.Run(t, &VersionSuite{})
 }
 
@@ -29,7 +29,7 @@ type testGetVersion struct {
 	Expected    string
 }
 
-func get_testGetVersion_data() []testGetVersion {
+func testGetVersionData() []testGetVersion {
 	tests := []testGetVersion{
 		{
 			Description: "All are empty strings",
@@ -52,19 +52,19 @@ func get_testGetVersion_data() []testGetVersion {
 	return tests
 }
 
-func (s *VersionSuite) Test_GetVersion() {
-	for _, tst := range get_testGetVersion_data() {
+func (s *VersionSuite) TestGetVersion() {
+	for _, tst := range testGetVersionData() {
 		expected := fmt.Sprintf(
 			"%s version: [%s]\n- Branch:     [%s]\n- Build Time: [%s]\n- Commit:     [%s]\n- Go Version: [%s]\n",
 			os.Args[0], tst.AppVersion, tst.Branch, tst.BuildTime, tst.Commit, tst.GoVersion)
 
-		put.AppVersion = tst.AppVersion
-		put.Branch = tst.Branch
-		put.BuildTime = tst.BuildTime
-		put.Commit = tst.Commit
-		put.GoVersion = tst.GoVersion
+		sut.AppVersion = tst.AppVersion
+		sut.Branch = tst.Branch
+		sut.BuildTime = tst.BuildTime
+		sut.Commit = tst.Commit
+		sut.GoVersion = tst.GoVersion
 
-		actual := put.GetVersion()
+		actual := sut.GetVersion()
 
 		assert.Equal(s.T(), expected, actual, tst.Description+fmt.Sprintf(" expected '%s', actual '%s'", expected, actual))
 	}

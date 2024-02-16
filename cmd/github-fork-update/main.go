@@ -9,5 +9,8 @@ import (
 func main() {
 	ctx := context.Background()
 
-	run.Run(ctx)
+	err := run.Run(ctx)
+	if err != nil {
+		panic(err)
+	}
 }

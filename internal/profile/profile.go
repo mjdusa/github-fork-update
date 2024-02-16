@@ -1,17 +1,19 @@
 package profile
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime/pprof"
 )
 
 type Profile struct {
-	CPUFile *os.File
-	MemFile *os.File
+	ctx     context.Context
+	cpuFile *os.File
+	memFile *os.File
 }
 
-func NewProfile(cpufileName string, memFileName string) (*Profile, error) {
+func NewProfile(ctx context.Context, cpufileName string, memFileName string) (*Profile, error) {
 	cpuFile, cerr := os.Create(cpufileName)
 	if cerr != nil {
 		return nil, fmt.Errorf("error creating CPU profile: %w", cerr)
@@ -24,13 +26,14 @@ func NewProfile(cpufileName string, memFileName string) (*Profile, error) {
 	}
 
 	return &Profile{
-		CPUFile: cpuFile,
-		MemFile: memFile,
+		ctx:     ctx,
+		cpuFile: cpuFile,
+		memFile: memFile,
 	}, nil
 }
 
 func (p *Profile) StartCPUProfile() error {
-	err := pprof.StartCPUProfile(p.CPUFile)
+	err := pprof.StartCPUProfile(p.cpuFile)
 	if err != nil {
 		return fmt.Errorf("error starting CPU profile: %w", err)
 	}
@@ -43,7 +46,7 @@ func (p *Profile) StopCPUProfile() {
 }
 
 func (p *Profile) WriteHeapProfile() error {
-	err := pprof.WriteHeapProfile(p.MemFile)
+	err := pprof.WriteHeapProfile(p.memFile)
 	if err != nil {
 		return fmt.Errorf("error writing head memory profile: %w", err)
 	}
@@ -52,8 +55,16 @@ func (p *Profile) WriteHeapProfile() error {
 }
 
 func (p *Profile) Close() error {
-	cerr := p.CPUFile.Close()
-	merr := p.MemFile.Close()
+	var cerr error
+	var merr error
+
+	if p.cpuFile != nil {
+		cerr = p.cpuFile.Close()
+	}
+
+	if p.memFile != nil {
+		merr = p.memFile.Close()
+	}
 
 	if cerr != nil {
 		return fmt.Errorf("error closing CPU profile: %w", cerr)

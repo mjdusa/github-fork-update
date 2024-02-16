@@ -5,20 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/v53/github"
 	"github.com/mjdusa/github-fork-update/internal/githubapi"
+	"github.com/mjdusa/github-fork-update/internal/http/httptest"
 )
 
 func Test_ListOrganizations_success(t *testing.T) {
-	client, mux, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantUser := "Test_ListOrganizations_success_user"
 	wantUrl := fmt.Sprintf("/users/%s/orgs", wantUser)
-	mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
 		lo := new(github.ListOptions)
 		json.NewDecoder(req.Body).Decode(lo)
 		testMethod(t, req, "GET")
@@ -30,13 +35,19 @@ func Test_ListOrganizations_success(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	opts := &github.ListOptions{
-		Page: 2,
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
 	}
 
-	repos, err := githubapi.ListOrganizations(ctx, client, wantUser, opts)
-	if err != nil {
-		t.Errorf("githubapi.ListOrganizations returned error: %v", err)
+	opts := &github.ListOptions{
+		Page:    2,
+		PerPage: 0,
+	}
+
+	repos, lerr := gha.ListOrganizations(ctx, wantUser, opts)
+	if lerr != nil {
+		t.Errorf("githubapi.ListOrganizations returned error: %v", lerr)
 	}
 
 	want := []*github.Organization{{ID: github.Int64(1)}}
@@ -46,8 +57,11 @@ func Test_ListOrganizations_success(t *testing.T) {
 }
 
 func Test_ListOrganizations_error(t *testing.T) {
-	client, _, _, teardown := setup()
-	defer teardown()
+	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
+	if serr != nil {
+		panic(serr)
+	}
+	defer srvr.Close()
 
 	wantUser := "%"
 	opts := &github.ListOptions{
@@ -55,8 +69,13 @@ func Test_ListOrganizations_error(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	_, err := githubapi.ListOrganizations(ctx, client, wantUser, opts)
-	if err == nil {
+	gha, nerr := NewTestGitHubAPI(ctx, "auth", srvr.Server.URL)
+	if nerr != nil {
+		t.Errorf("githubapi.NewGitHubAPI error: %v", nerr)
+	}
+
+	_, lerr := gha.ListOrganizations(ctx, wantUser, opts)
+	if lerr == nil {
 		t.Errorf("githubapi.ListOrganizations should have returned error")
 	}
 }
