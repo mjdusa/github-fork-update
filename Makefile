@@ -72,13 +72,12 @@ clean:
 	@echo "clean"
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(DIST_DIR)
+	@rm -f *.pprof
 	@$(GOCLEAN) -cache -testcache -fuzzcache -x
 
 .PHONY: cleanall
-cleanall:
+cleanall: clean
 	@echo "cleanall"
-	@rm -rf $(BUILD_DIR)
-	@rm -rf $(DIST_DIR)
 	@$(GOCLEAN) -cache -testcache -fuzzcache -modcache -x
 
 .PHONY: $(BUILD_DIR)
@@ -148,7 +147,7 @@ debug: GOFLAGS += -x -v
 debug: clean gobuild
 
 .PHONY: release
-release: clean gobuild
+release: cleanall gobuild
 
 .PHONY: pre-commit
 pre-commit: init
