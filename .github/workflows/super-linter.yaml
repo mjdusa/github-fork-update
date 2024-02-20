@@ -48,7 +48,7 @@ jobs:
         run: |
           cat .github/super-linter.env >> "$GITHUB_ENV"
           set
-  
+
       - name: super-linter/super-linter
         uses: super-linter/super-linter@v6.1.1
         env:
