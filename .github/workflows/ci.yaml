@@ -1,5 +1,5 @@
 ---
-name: build
+name: CI
 
 on:
   workflow_dispatch:
@@ -20,11 +20,11 @@ env:
   GOPRIVATE: ''
 
 jobs:
-  build:
-    name: Build
+  ci:
+    name: CI
     strategy:
       matrix:
-        go-version: ['stable']
+        go-version: ['stable']  # only use ONE version of go here or the upload-artifact will fail
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
@@ -36,6 +36,8 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ env.target_ref }}
           token: ${{ github.token }}
+          persist-credentials: false  # otherwise, the token used is the GITHUB_TOKEN, instead of your
+          #                             personal access token.
           fetch-depth: 0
 
       - name: actions/setup-go
@@ -83,6 +85,25 @@ jobs:
           # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
           # skip-build-cache: true
 
+      - name: go test
+        run: |
+          go env
+          go test -v -race -coverprofile=coverage.gcov -covermode=atomic ./...
+          go test -v -coverprofile=coverage.gcov -covermode=count ./...
+          go tool cover -func=coverage.gcov -o=coverage.out
+
+      - name: jandelgado/gcov2lcov-action
+        uses: jandelgado/gcov2lcov-action@c680c0f7c7442485f1749eb2a13e54a686e76eb5  # v1.0.9
+        with:
+          infile: coverage.gcov
+          outfile: coverage.lcov
+
+      - name: VeryGoodOpenSource/very_good_coverage
+        uses: VeryGoodOpenSource/very_good_coverage@3b475421464c564c0714d92ce02742bd81fa9eda  # v2.2.0
+        with:
+          path: coverage.lcov
+          min_coverage: 40
+
       - name: pre-build
         id: prebuild
         run: |
@@ -90,7 +111,7 @@ jobs:
           goversion=$(go version)
           echo "goversion=${goversion}"
           echo "::set-output name=goversion::${goversion}"
-          appversion=$(cat .version)
+          appversion=$(git describe --tags)
           echo "appversion=${appversion}"
           echo "::set-output name=appversion::${appversion}"
           buildtime=$(date -u "+%Y-%m-%dT%TZ")
@@ -101,7 +122,7 @@ jobs:
         run: |
           go env
           mkdir dist
-          APP=github-fork-update
+          APP=github-api-explore
           go build -x -v -ldflags="-s -w \
             -X 'internal/version.AppVersion=${{ steps.prebuild.outputs.appversion }}' \
             -X 'internal/version.Branch=${{ env.target_ref }}' \
@@ -109,3 +130,11 @@ jobs:
             -X 'internal/version.Commit=${{ github.sha }}' \
             -X 'internal/version.GoVersion=${{ steps.prebuild.outputs.goversion }}'" \
             -o dist/${APP} cmd/${APP}/main.go
+
+      # Upload generated artifacts for historical reference
+      - name: actions/upload-artifact
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3  # v4.3.1
+        with:
+          name: test-reports
+          path: ./coverage.*
+          retention-days: 180
