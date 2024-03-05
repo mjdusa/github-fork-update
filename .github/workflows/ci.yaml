@@ -122,7 +122,7 @@ jobs:
         run: |
           go env
           mkdir dist
-          APP=github-api-explore
+          APP=github-fork-update
           go build -x -v -ldflags="-s -w \
             -X 'internal/version.AppVersion=${{ steps.prebuild.outputs.appversion }}' \
             -X 'internal/version.Branch=${{ env.target_ref }}' \
