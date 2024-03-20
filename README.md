@@ -58,6 +58,23 @@ make release
 ./dist/github-fork-update -auth=[github-auth-token]
 ```
 
+## Maintaining, Housekeeping, Greenkeeping, etc
+
+### Upgrade Go Version
+```bash
+go mod edit -go=<go_version> && go mod tidy
+```
+
+### Upgrade Dependency Versions
+```bash
+go get -u && go mod tidy
+```
+
+### Running golangci-lint Locally
+```bash
+golangci-lint run --verbose --tests=true --timeout=1m --config=.github/linters/.golangci.yml --issues-exit-code=0 --out-format=checkstyle
+```
+
 ## Profiling
 
 ### Prereq
