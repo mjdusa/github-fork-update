@@ -110,13 +110,13 @@ jobs:
           echo "pre-building"
           goversion=$(go version)
           echo "goversion=${goversion}"
-          echo "::set-output name=goversion::${goversion}"
+          echo "goversion=${goversion}" >> $GITHUB_OUTPUT
           appversion=$(git describe --tags)
           echo "appversion=${appversion}"
-          echo "::set-output name=appversion::${appversion}"
+          echo "appversion=${appversion}" >> $GITHUB_OUTPUT
           buildtime=$(date -u "+%Y-%m-%dT%TZ")
           echo "buildtime=${buildtime}"
-          echo "::set-output name=buildtime::${buildtime}"
+          echo "buildtime=${buildtime}" >> $GITHUB_OUTPUT
 
       - name: go build
         run: |
