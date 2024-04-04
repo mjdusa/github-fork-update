@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-github/v53/github"
 	"github.com/mjdusa/github-fork-update/internal/githubapi"
 	"github.com/mjdusa/github-fork-update/internal/http/httptest"
+	"github.com/stretchr/testify/assert"
 )
 
 func NewGitHubAPITokenClient(ctx context.Context, token string, apiUrl string) (*github.Client, error) {
@@ -67,7 +68,9 @@ func testFormValues(t *testing.T, r *http.Request, values values) {
 		want.Set(k, v)
 	}
 
-	r.ParseForm()
+	err := r.ParseForm()
+	assert.Nil(t, err, "ParseForm returned error: %w", err)
+
 	if got := r.Form; !cmp.Equal(got, want) {
 		t.Errorf("Request parameters: %v, want %v", got, want)
 	}
@@ -130,7 +133,7 @@ func TestNewGitHubAPIerror(t *testing.T) {
 	}
 }
 
-func Test_ListOrganizations_success(t *testing.T) {
+func TestListOrganizationsSuccess(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -172,7 +175,7 @@ func Test_ListOrganizations_success(t *testing.T) {
 	}
 }
 
-func Test_ListOrganizations_error(t *testing.T) {
+func TestListOrganizationsError(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -196,7 +199,7 @@ func Test_ListOrganizations_error(t *testing.T) {
 	}
 }
 
-func Test_ListRepositories_success(t *testing.T) {
+func TestListRepositoriesSuccess(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -247,7 +250,7 @@ func Test_ListRepositories_success(t *testing.T) {
 	}
 }
 
-func Test_ListRepositories_error(t *testing.T) {
+func TestListRepositoriesError(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -293,7 +296,7 @@ func Test_ListRepositories_error(t *testing.T) {
 	}
 }
 
-func Test_ListForks_success(t *testing.T) {
+func TestListForksSuccess(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -338,7 +341,7 @@ func Test_ListForks_success(t *testing.T) {
 	}
 }
 
-func Test_ListForks_error(t *testing.T) {
+func TestListForksError(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -378,7 +381,7 @@ func Test_ListForks_error(t *testing.T) {
 	}
 }
 
-func Test_MergeUpstream_success(t *testing.T) {
+func TestMergeUpstreamSuccess(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -423,7 +426,7 @@ func Test_MergeUpstream_success(t *testing.T) {
 	}
 }
 
-func Test_MergeUpstream_error(t *testing.T) {
+func TestMergeUpstreamError(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -465,7 +468,7 @@ func Test_MergeUpstream_error(t *testing.T) {
 
 var Test_SyncForks_success_no_update_getRepositories_HasFired = false
 
-func Test_SyncForks_success_no_update(t *testing.T) {
+func TestSyncForksSuccessNoUpdate(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -527,7 +530,7 @@ func Test_SyncForks_success_no_update(t *testing.T) {
 	}
 }
 
-func Test_SyncForks_bad_userName(t *testing.T) {
+func TestSyncForksBadUserName(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -553,7 +556,7 @@ func Test_SyncForks_bad_userName(t *testing.T) {
 	}
 }
 
-func Test_SyncForks_bad_get(t *testing.T) {
+func TestSyncForksBadGet(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -595,7 +598,7 @@ func Test_SyncForks_bad_get(t *testing.T) {
 
 var Test_SyncForks_bad_merge_getRepositories_HasFired = false
 
-func Test_SyncForks_bad_merge(t *testing.T) {
+func TestSyncForksBadMerge(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -657,7 +660,7 @@ func Test_SyncForks_bad_merge(t *testing.T) {
 	}
 }
 
-func Test_MergeUpstreamFork_success_no_update(t *testing.T) {
+func TestMergeUpstreamForkSuccessNoUpdate(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -691,7 +694,7 @@ func Test_MergeUpstreamFork_success_no_update(t *testing.T) {
 	}
 }
 
-func Test_MergeUpstreamFork_success_fast_forward(t *testing.T) {
+func TestMergeUpstreamForkSuccessFastForward(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)
@@ -725,7 +728,7 @@ func Test_MergeUpstreamFork_success_fast_forward(t *testing.T) {
 	}
 }
 
-func Test_MergeUpstreamFork_success_merge(t *testing.T) {
+func TestMergeUpstreamForkSuccessMerge(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
 	if serr != nil {
 		panic(serr)

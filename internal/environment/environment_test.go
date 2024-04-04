@@ -104,14 +104,18 @@ func (s *EnvSuite) TestGetParameters2() {
 
 			if err != nil {
 				if !tst.wantErr {
-					t.Errorf("GetParameters() test %s returned error = %v, wantErr %v", tst.name, err, tst.wantErr)
+					t.Errorf("GetParameters() test %s returned error = %v, wantErr %v",
+						tst.name, err, tst.wantErr)
 				}
 			} else {
 				if tst.wantErr {
-					t.Errorf("GetParameters() test %s returned no error, wantErr %v", tst.name, tst.wantErr)
+					t.Errorf("GetParameters() test %s returned no error, wantErr %v",
+						tst.name, tst.wantErr)
 				}
-				assert.Equal(t, tst.wantDbg, *gotDbg, "GetParameters() Debug test '%s'", tst.name)
-				assert.Equal(t, tst.wantVerb, *gotVerb, "GetParameters() Verbose test '%s'", tst.name)
+				assert.Equal(t, tst.wantDbg, *gotDbg, "GetParameters() Debug test '%s'",
+					tst.name)
+				assert.Equal(t, tst.wantVerb, *gotVerb, "GetParameters() Verbose test '%s'",
+					tst.name)
 			}
 		})
 	}

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	sut "github.com/mjdusa/github-fork-update/internal/version" // sut - system under test
+	sut "github.com/mjdusa/github-fork-update/internal/version" // sut - system under test.
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -66,6 +66,7 @@ func (s *VersionSuite) TestGetVersion() {
 
 		actual := sut.GetVersion()
 
-		assert.Equal(s.T(), expected, actual, tst.Description+fmt.Sprintf(" expected '%s', actual '%s'", expected, actual))
+		assert.Equal(s.T(), expected, actual,
+			tst.Description+fmt.Sprintf(" expected '%s', actual '%s'", expected, actual))
 	}
 }
