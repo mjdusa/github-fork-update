@@ -6,82 +6,45 @@ import (
 	"testing"
 
 	"github.com/mjdusa/github-fork-update/internal/http/httptest"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewHTTPTestServerRoot(t *testing.T) {
+	path := "/"
 	log := bytes.NewBufferString("")
-	server, err := httptest.NewHTTPTestServer("/", log)
-	if err != nil {
-		t.Errorf("NewHTTPTestServer returned error: %v", err)
-	}
-
-	if server == nil {
-		t.Error("Expected HTTPTestServer, got nil")
-	}
+	server, err := httptest.NewHTTPTestServer(path, log)
+	assert.NoError(t, err, "NewHTTPTestServer returned error: %v", err)
+	assert.NotNil(t, server, "Expected HTTPTestServer, got nil")
 	defer server.Close()
-
-	if server.Path != "/" {
-		t.Errorf("Expected server URL to be '/', got '%s'", server.Path)
-	}
-
-	if server.Mux == nil {
-		t.Error("Expected Mux to be initialized, got nil")
-	}
-
-	if server.APIHandler == nil {
-		t.Error("Expected APIHandler to be initialized, got nil")
-	}
-
-	if server.Server == nil {
-		t.Error("Expected Server to be initialized, got nil")
-	}
+	assert.Equal(t, path, server.Path, "Expected server URL to be '/', got '%s'", server.Path)
+	assert.NotNil(t, server.Mux, "Expected Mux to be initialized, got nil")
+	assert.NotNil(t, server.APIHandler, "Expected APIHandler to be initialized, got nil")
+	assert.NotNil(t, server.Server, "Expected Server to be initialized, got nil")
 }
 
 func TestNewHTTPTestServerBase(t *testing.T) {
+	path := "/base"
 	log := bytes.NewBufferString("")
-	server, err := httptest.NewHTTPTestServer("/base", log)
-	if err != nil {
-		t.Errorf("NewHTTPTestServer returned error: %v", err)
-	}
-
-	if server == nil {
-		t.Error("Expected HTTPTestServer, got nil")
-	}
+	server, err := httptest.NewHTTPTestServer(path, log)
+	assert.NoError(t, err, "NewHTTPTestServer returned error: %v", err)
+	assert.NotNil(t, server, "Expected HTTPTestServer, got nil")
 	defer server.Close()
-
-	if server.Path != "/base" {
-		t.Errorf("Expected server URL to be '/base', got '%s'", server.Path)
-	}
-
-	if server.Mux == nil {
-		t.Error("Expected Mux to be initialized, got nil")
-	}
-
-	if server.APIHandler == nil {
-		t.Error("Expected APIHandler to be initialized, got nil")
-	}
-
-	if server.Server == nil {
-		t.Error("Expected Server to be initialized, got nil")
-	}
+	assert.Equal(t, path, server.Path, "Expected server URL to be '/', got '%s'", server.Path)
+	assert.NotNil(t, server.Mux, "Expected Mux to be initialized, got nil")
+	assert.NotNil(t, server.APIHandler, "Expected APIHandler to be initialized, got nil")
+	assert.NotNil(t, server.Server, "Expected Server to be initialized, got nil")
 }
 
 func TestHTTPTestServerClose(t *testing.T) {
+	path := "/base"
 	log := bytes.NewBufferString("")
-	server, err := httptest.NewHTTPTestServer("/base", log)
-	if err != nil {
-		t.Errorf("NewHTTPTestServer returned error: %v", err)
-	}
-
+	server, err := httptest.NewHTTPTestServer(path, log)
+	assert.NoError(t, err, "NewHTTPTestServer returned error: %v", err)
+	assert.NotNil(t, server, "Expected HTTPTestServer, got nil")
 	server.Close()
 
-	req, _ := http.NewRequest("GET", server.Server.URL, nil)
+	req, _ := http.NewRequest(http.MethodGet, server.Server.URL, nil)
 	resp, err := http.DefaultClient.Do(req)
-	if err == nil {
-		t.Error("Expected error after server close, got nil")
-	}
-
-	if resp != nil {
-		t.Error("Expected no response after server close, got response")
-	}
+	assert.Error(t, err, "Expected error after server close, got nil")
+	assert.Nil(t, resp, "Expected no response after server close, got response")
 }

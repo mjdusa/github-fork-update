@@ -17,12 +17,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func NewGitHubAPITokenClient(ctx context.Context, token string, apiUrl string) (*github.Client, error) {
+const HTTPHeaderKeyAccept = "Accept"
+
+func NewGitHubAPITokenClient(ctx context.Context, token string, apiURL string) (*github.Client, error) {
 	if len(token) == 0 {
 		return nil, fmt.Errorf("empty token error")
 	}
 
-	url, err := url.Parse(apiUrl + githubapi.GitHubAPIBaseURLPath + "/")
+	url, err := url.Parse(apiURL + githubapi.GitHubAPIBaseURLPath + "/")
 	if err != nil {
 		return nil, fmt.Errorf("url.Parse returned error: %w", err)
 	}
@@ -61,25 +63,25 @@ func NewTestGitHubAPI(ctx context.Context, auth string, url string) (*githubapi.
 
 type values map[string]string
 
-func testFormValues(t *testing.T, r *http.Request, values values) {
+func testFormValues(t *testing.T, req *http.Request, values values) {
 	t.Helper()
 	want := url.Values{}
 	for k, v := range values {
 		want.Set(k, v)
 	}
 
-	err := r.ParseForm()
-	assert.Nil(t, err, "ParseForm returned error: %w", err)
+	err := req.ParseForm()
+	assert.NoError(t, err, "ParseForm() returned error: %w", err)
 
-	if got := r.Form; !cmp.Equal(got, want) {
+	if got := req.Form; !cmp.Equal(got, want) {
 		t.Errorf("Request parameters: %v, want %v", got, want)
 	}
 }
 
-func testHeader(t *testing.T, r *http.Request, header string, want string) {
+func testHeader(t *testing.T, r *http.Request, want string) {
 	t.Helper()
-	if got := r.Header.Get(header); got != want {
-		t.Errorf("Header.Get(%q) returned %q, want %q", header, got, want)
+	if got := r.Header.Get(HTTPHeaderKeyAccept); got != want {
+		t.Errorf("Header.Get(%q) returned %q, want %q", HTTPHeaderKeyAccept, got, want)
 	}
 }
 
@@ -141,11 +143,11 @@ func TestListOrganizationsSuccess(t *testing.T) {
 	defer srvr.Close()
 
 	wantUser := "Test_ListOrganizations_success_user"
-	wantUrl := fmt.Sprintf("/users/%s/orgs", wantUser)
-	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	wantURL := fmt.Sprintf("/users/%s/orgs", wantUser)
+	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
 		lo := new(github.ListOptions)
-		json.NewDecoder(req.Body).Decode(lo)
-		testMethod(t, req, "GET")
+		json.NewDecoder(req.Body).Decode(lo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
 		testFormValues(t, req, values{
 			"page": "2",
 		})
@@ -207,13 +209,14 @@ func TestListRepositoriesSuccess(t *testing.T) {
 	defer srvr.Close()
 
 	wantUser := "Test_ListRepositories_success_user"
-	wantUrl := fmt.Sprintf("/users/%s/repos", wantUser)
-	wantAcceptHeaders := []string{"application/vnd.github.mercy-preview+json", "application/vnd.github.nebula-preview+json"}
-	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
-		v := new(github.RepositoryListOptions)
-		json.NewDecoder(req.Body).Decode(v)
-		testMethod(t, req, "GET")
-		testHeader(t, req, "Accept", strings.Join(wantAcceptHeaders, ", "))
+	wantURL := fmt.Sprintf("/users/%s/repos", wantUser)
+	wantAcceptHeaders := []string{"application/vnd.github.mercy-preview+json",
+		"application/vnd.github.nebula-preview+json"}
+	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
+		rlo := new(github.RepositoryListOptions)
+		json.NewDecoder(req.Body).Decode(rlo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
+		testHeader(t, req, strings.Join(wantAcceptHeaders, ", "))
 		testFormValues(t, req, values{
 			"visibility":  "public",
 			"affiliation": "owner,collaborator",
@@ -258,13 +261,14 @@ func TestListRepositoriesError(t *testing.T) {
 	defer srvr.Close()
 
 	wantUser := "Test_ListRepositories_error_user"
-	wantUrl := fmt.Sprintf("/users/%s/repos", wantUser)
-	wantAcceptHeaders := []string{"application/vnd.github.mercy-preview+json", "application/vnd.github.nebula-preview+json"}
-	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
-		v := new(github.RepositoryListOptions)
-		json.NewDecoder(req.Body).Decode(v)
-		testMethod(t, req, "GET")
-		testHeader(t, req, "Accept", strings.Join(wantAcceptHeaders, ", "))
+	wantURL := fmt.Sprintf("/users/%s/repos", wantUser)
+	wantAcceptHeaders := []string{"application/vnd.github.mercy-preview+json",
+		"application/vnd.github.nebula-preview+json"}
+	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
+		rlo := new(github.RepositoryListOptions)
+		json.NewDecoder(req.Body).Decode(rlo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
+		testHeader(t, req, strings.Join(wantAcceptHeaders, ", "))
 		testFormValues(t, req, values{
 			"visibility":  "public",
 			"affiliation": "owner,collaborator",
@@ -273,7 +277,7 @@ func TestListRepositoriesError(t *testing.T) {
 			"page":        "2",
 		})
 
-		wtr.WriteHeader(422)
+		wtr.WriteHeader(http.StatusUnprocessableEntity)
 	})
 
 	opt := &github.RepositoryListOptions{
@@ -305,12 +309,12 @@ func TestListForksSuccess(t *testing.T) {
 
 	wantOwner := "wantOwner"
 	wantRepo := "wantRepo"
-	wantUrl := fmt.Sprintf("/repos/%s/%s/forks", wantOwner, wantRepo)
-	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
-		v := new(github.RepositoryListForksOptions)
-		json.NewDecoder(req.Body).Decode(v)
-		testMethod(t, req, "GET")
-		testHeader(t, req, "Accept", "application/vnd.github.mercy-preview+json")
+	wantURL := fmt.Sprintf("/repos/%s/%s/forks", wantOwner, wantRepo)
+	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
+		rlfo := new(github.RepositoryListForksOptions)
+		json.NewDecoder(req.Body).Decode(rlfo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
+		testHeader(t, req, "application/vnd.github.mercy-preview+json")
 		testFormValues(t, req, values{
 			"sort": "newest",
 			"page": "1",
@@ -350,18 +354,18 @@ func TestListForksError(t *testing.T) {
 
 	wantOwner := "wantOwner"
 	wantRepo := "wantRepo"
-	wantUrl := fmt.Sprintf("/repos/%v/%v/forks", wantOwner, wantRepo)
-	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
-		v := new(github.RepositoryListForksOptions)
-		json.NewDecoder(req.Body).Decode(v)
-		testMethod(t, req, "GET")
-		testHeader(t, req, "Accept", "application/vnd.github.mercy-preview+json")
+	wantURL := fmt.Sprintf("/repos/%v/%v/forks", wantOwner, wantRepo)
+	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
+		rlfo := new(github.RepositoryListForksOptions)
+		json.NewDecoder(req.Body).Decode(rlfo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
+		testHeader(t, req, "application/vnd.github.mercy-preview+json")
 		testFormValues(t, req, values{
 			"sort": "newest",
 			"page": "1",
 		})
 
-		wtr.WriteHeader(422)
+		wtr.WriteHeader(http.StatusUnprocessableEntity)
 	})
 
 	opt := &github.RepositoryListForksOptions{
@@ -396,11 +400,11 @@ func TestMergeUpstreamSuccess(t *testing.T) {
 		Branch: github.String(wantBranch),
 	}
 
-	wantUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", wantOwner, wantRepo)
+	wantURL := fmt.Sprintf("/repos/%s/%s/merge-upstream", wantOwner, wantRepo)
 
-	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
-		json.NewDecoder(req.Body).Decode(rmur)
+		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
 		testMethod(t, req, "POST")
 		if !cmp.Equal(rmur, input) {
 			t.Errorf("Request body = %+v, want %+v", rmur, input)
@@ -441,17 +445,17 @@ func TestMergeUpstreamError(t *testing.T) {
 		Branch: github.String(wantBranch),
 	}
 
-	wantUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", wantOwner, wantRepo)
+	wantURL := fmt.Sprintf("/repos/%s/%s/merge-upstream", wantOwner, wantRepo)
 
-	srvr.Mux.HandleFunc(wantUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
-		json.NewDecoder(req.Body).Decode(rmur)
+		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
 		testMethod(t, req, "POST")
 		if !cmp.Equal(rmur, input) {
 			t.Errorf("Request body = %+v, want %+v", rmur, input)
 		}
 
-		wtr.WriteHeader(422)
+		wtr.WriteHeader(http.StatusUnprocessableEntity)
 	})
 
 	ctx := context.Background()
@@ -466,7 +470,7 @@ func TestMergeUpstreamError(t *testing.T) {
 	}
 }
 
-var Test_SyncForks_success_no_update_getRepositories_HasFired = false
+var TestSyncForksSuccessNoUpdategetRepositoriesHasFired = false //nolint:gochecknoglobals,nolintlint,lll  // This is a test variable
 
 func TestSyncForksSuccessNoUpdate(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
@@ -481,41 +485,45 @@ func TestSyncForksSuccessNoUpdate(t *testing.T) {
 	fullRepo := fmt.Sprintf("%s:%s", owner, repo)
 	fullBranch := fmt.Sprintf("%s:%s", repo, branch)
 
-	userJson := `{"login":"` + owner + `","id":666,"name":"My Test User"}`
-	reposJson := `[{"id":123,"owner":` + userJson + `,"name":"` + repo + `","full_name":"` + fullRepo + `","fork":true,"default_branch":"` + branch + `"},{"id":321,"owner":` + userJson + `,"name":"not-a-fork","full_name":"` + owner + `:not-a-fork","fork":false,"default_branch":"` + branch + `"}]`
+	userJSON := `{"login":"` + owner + `","id":666,"name":"My Test User"}`
+	reposJSON := `[{"id":123,"owner":` + userJSON + `,"name":"` + repo +
+		`","full_name":"` + fullRepo + `","fork":true,"default_branch":"` + branch +
+		`"},{"id":321,"owner":` + userJSON + `,"name":"not-a-fork","full_name":"` + owner +
+		`:not-a-fork","fork":false,"default_branch":"` + branch + `"}]`
 
 	// setup for client.Users.Get(ctx, userName)
-	userUrl := "/user"
-	srvr.Mux.HandleFunc(userUrl, func(wtr http.ResponseWriter, req *http.Request) {
-		testMethod(t, req, "GET")
-		fmt.Fprint(wtr, userJson)
+	userURL := "/user"
+	srvr.Mux.HandleFunc(userURL, func(wtr http.ResponseWriter, req *http.Request) {
+		testMethod(t, req, http.MethodGet)
+		fmt.Fprint(wtr, userJSON)
 	})
 
-	Test_SyncForks_success_no_update_getRepositories_HasFired = false
+	TestSyncForksSuccessNoUpdategetRepositoriesHasFired = false //nolint:gochecknoglobals,nolintlint,lll  // This is a test variable
 
 	// setup for client.Repositories.List(ctx, user, opts)
-	userRepoListUrl := fmt.Sprintf("/users/%s/repos", owner)
-	srvr.Mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	userRepoListURL := fmt.Sprintf("/users/%s/repos", owner)
+	srvr.Mux.HandleFunc(userRepoListURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rlo := new(github.RepositoryListOptions)
-		json.NewDecoder(req.Body).Decode(rlo)
-		testMethod(t, req, "GET")
+		json.NewDecoder(req.Body).Decode(rlo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
 
-		if Test_SyncForks_success_no_update_getRepositories_HasFired {
+		if TestSyncForksSuccessNoUpdategetRepositoriesHasFired {
 			fmt.Fprint(wtr, `[]`)
 		} else {
-			fmt.Fprint(wtr, reposJson)
-			Test_SyncForks_success_no_update_getRepositories_HasFired = true
+			fmt.Fprint(wtr, reposJSON)
+			TestSyncForksSuccessNoUpdategetRepositoriesHasFired = true
 		}
 	})
 
 	// setup for client.Repositories.MergeUpstream(ctx, owner, repo, &req)
-	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	repoMergeURL := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
+	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
-		json.NewDecoder(req.Body).Decode(rmur)
+		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
 		testMethod(t, req, "POST")
 
-		fmt.Fprint(wtr, `{"message":"This branch is not behind the upstream `+fullBranch+`.","merge_type":"none","base_branch":"`+fullRepo+`"}`)
+		fmt.Fprint(wtr, `{"message":"This branch is not behind the upstream `+
+			fullBranch+`.","merge_type":"none","base_branch":"`+fullRepo+`"}`)
 	})
 
 	ctx := context.Background()
@@ -565,23 +573,23 @@ func TestSyncForksBadGet(t *testing.T) {
 
 	login := "Test_user"
 
-	userJson := `{"login":"` + login + `","id":666,"name":"My Test User"}`
+	userJSON := `{"login":"` + login + `","id":666,"name":"My Test User"}`
 
 	// setup for client.Users.Get(ctx, userName)
-	userUrl := "/user"
-	srvr.Mux.HandleFunc(userUrl, func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, "GET")
-		fmt.Fprint(w, userJson)
+	userURL := "/user"
+	srvr.Mux.HandleFunc(userURL, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, userJSON)
 	})
 
 	// setup for client.Repositories.List(ctx, user, opts)
-	userRepoListUrl := fmt.Sprintf("/users/%s/repos", login)
-	srvr.Mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	userRepoListURL := fmt.Sprintf("/users/%s/repos", login)
+	srvr.Mux.HandleFunc(userRepoListURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rlo := new(github.RepositoryListOptions)
-		json.NewDecoder(req.Body).Decode(rlo)
-		testMethod(t, req, "GET")
+		json.NewDecoder(req.Body).Decode(rlo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
 
-		wtr.WriteHeader(422)
+		wtr.WriteHeader(http.StatusUnprocessableEntity)
 	})
 
 	ctx := context.Background()
@@ -596,7 +604,7 @@ func TestSyncForksBadGet(t *testing.T) {
 	}
 }
 
-var Test_SyncForks_bad_merge_getRepositories_HasFired = false
+var TestSyncForksBadMergegetRepositoriesHasFired = false //nolint:gochecknoglobals,nolintlint,lll  // This is a test variable
 
 func TestSyncForksBadMerge(t *testing.T) {
 	srvr, serr := httptest.NewHTTPTestServer(githubapi.GitHubAPIBaseURLPath, os.Stderr)
@@ -611,41 +619,42 @@ func TestSyncForksBadMerge(t *testing.T) {
 	branch := "Test_branch"
 	fullRepo := fmt.Sprintf("%s:%s", owner, repo)
 
-	userJson := `{"login":"` + login + `","id":666,"name":"My Test User"}`
-	reposJson := `[{"id":123,"owner":` + userJson + `,"name":"` + repo + `","full_name":"` + fullRepo + `","fork":true,"default_branch":"` + branch + `"}]`
+	userJSON := `{"login":"` + login + `","id":666,"name":"My Test User"}`
+	reposJSON := `[{"id":123,"owner":` + userJSON + `,"name":"` + repo + `","full_name":"` + fullRepo +
+		`","fork":true,"default_branch":"` + branch + `"}]`
 
 	// setup for client.Users.Get(ctx, userName)
-	userUrl := "/user"
-	srvr.Mux.HandleFunc(userUrl, func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, "GET")
-		fmt.Fprint(w, userJson)
+	userURL := "/user"
+	srvr.Mux.HandleFunc(userURL, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, userJSON)
 	})
 
-	Test_SyncForks_bad_merge_getRepositories_HasFired = false
+	TestSyncForksBadMergegetRepositoriesHasFired = false
 
 	// setup for client.Repositories.List(ctx, user, opts)
-	userRepoListUrl := fmt.Sprintf("/users/%s/repos", login)
-	srvr.Mux.HandleFunc(userRepoListUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	userRepoListURL := fmt.Sprintf("/users/%s/repos", login)
+	srvr.Mux.HandleFunc(userRepoListURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rlo := new(github.RepositoryListOptions)
-		json.NewDecoder(req.Body).Decode(rlo)
-		testMethod(t, req, "GET")
+		json.NewDecoder(req.Body).Decode(rlo) //nolint:errcheck  // We don't care about the error here
+		testMethod(t, req, http.MethodGet)
 
-		if Test_SyncForks_bad_merge_getRepositories_HasFired {
+		if TestSyncForksBadMergegetRepositoriesHasFired {
 			fmt.Fprint(wtr, `[]`)
 		} else {
-			fmt.Fprint(wtr, reposJson)
-			Test_SyncForks_bad_merge_getRepositories_HasFired = true
+			fmt.Fprint(wtr, reposJSON)
+			TestSyncForksBadMergegetRepositoriesHasFired = true
 		}
 	})
 
 	// setup for client.Repositories.MergeUpstream(ctx, owner, repo, &req)
-	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	repoMergeURL := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
+	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
-		json.NewDecoder(req.Body).Decode(rmur)
+		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
 		testMethod(t, req, "POST")
 
-		wtr.WriteHeader(404)
+		wtr.WriteHeader(http.StatusNotFound)
 	})
 
 	ctx := context.Background()
@@ -673,13 +682,14 @@ func TestMergeUpstreamForkSuccessNoUpdate(t *testing.T) {
 	fullRepo := fmt.Sprintf("%s:%s", owner, repo)
 	fullBranch := fmt.Sprintf("%s:%s", repo, branch)
 
-	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	repoMergeURL := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
+	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
-		json.NewDecoder(req.Body).Decode(rmur)
+		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
 		testMethod(t, req, "POST")
 
-		fmt.Fprint(wtr, `{"message":"This branch is not behind the upstream `+fullBranch+`.","merge_type":"none","base_branch":"`+fullRepo+`"}`)
+		fmt.Fprint(wtr, `{"message":"This branch is not behind the upstream `+
+			fullBranch+`.","merge_type":"none","base_branch":"`+fullRepo+`"}`)
 	})
 
 	ctx := context.Background()
@@ -707,13 +717,14 @@ func TestMergeUpstreamForkSuccessFastForward(t *testing.T) {
 	fullRepo := fmt.Sprintf("%s:%s", owner, repo)
 	fullBranch := fmt.Sprintf("%s:%s", repo, branch)
 
-	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	repoMergeURL := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
+	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
-		json.NewDecoder(req.Body).Decode(rmur)
+		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
 		testMethod(t, req, "POST")
 
-		fmt.Fprint(wtr, `{"message":"Successfully fetched and fast-forwarded from upstream `+fullBranch+`.","merge_type":"fast-forward","base_branch":"`+fullRepo+`"}`)
+		fmt.Fprint(wtr, `{"message":"Successfully fetched and fast-forwarded from upstream `+
+			fullBranch+`.","merge_type":"fast-forward","base_branch":"`+fullRepo+`"}`)
 	})
 
 	ctx := context.Background()
@@ -741,13 +752,14 @@ func TestMergeUpstreamForkSuccessMerge(t *testing.T) {
 	fullRepo := fmt.Sprintf("%s:%s", owner, repo)
 	fullBranch := fmt.Sprintf("%s:%s", repo, branch)
 
-	repoMergeUrl := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
-	srvr.Mux.HandleFunc(repoMergeUrl, func(wtr http.ResponseWriter, req *http.Request) {
+	repoMergeURL := fmt.Sprintf("/repos/%s/%s/merge-upstream", owner, repo)
+	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
-		json.NewDecoder(req.Body).Decode(rmur)
+		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
 		testMethod(t, req, "POST")
 
-		fmt.Fprint(wtr, `{"message":"Successfully merged from upstream `+fullBranch+`.","merge_type":"merge","base_branch":"`+fullRepo+`"}`)
+		fmt.Fprint(wtr, `{"message":"Successfully merged from upstream `+
+			fullBranch+`.","merge_type":"merge","base_branch":"`+fullRepo+`"}`)
 	})
 
 	ctx := context.Background()

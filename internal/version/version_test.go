@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// Setup Suite
+// Setup Suite.
 type VersionSuite struct {
 	suite.Suite
 }

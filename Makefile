@@ -113,8 +113,8 @@ prebuild: init clean $(BUILD_DIR) $(DIST_DIR) go.mod
 golangcilint: init $(BUILD_DIR)
 	echo "Running golangci-lint"
 	${GOPATH}/bin/golangci-lint --version
-	${GOPATH}/bin/golangci-lint run --verbose --config .github/linters/.golangci.yml \
-	  --issues-exit-code 0 --out-format=checkstyle > "$(LINTER_REPORT)"
+	${GOPATH}/bin/golangci-lint run --verbose --tests=true --timeout=1m --config .github/linters/.golangci.yml \
+	  --issues-exit-code=0 --out-format=checkstyle > "$(LINTER_REPORT)"
 	cat $(LINTER_REPORT)
 
 .PHONY: lint

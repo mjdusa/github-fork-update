@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// Setup Suite
+// Setup Suite.
 type EnvSuite struct {
 	suite.Suite
 }
@@ -169,7 +169,7 @@ func (s *EnvSuite) TestReport() {
 	for _, tst := range tests {
 		s.T().Run(tst.name, func(t *testing.T) {
 			if got := env.Report(tst.verbose, tst.dbg); got != tst.want {
-				t.Errorf("Report() = %v, want %v", got, tst.want)
+				t.Errorf("Report() = %s, want %s", got, tst.want)
 			}
 		})
 	}
