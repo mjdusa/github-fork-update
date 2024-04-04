@@ -78,16 +78,16 @@ func testFormValues(t *testing.T, req *http.Request, values values) {
 	}
 }
 
-func testHeader(t *testing.T, r *http.Request, want string) {
+func testHeader(t *testing.T, req *http.Request, want string) {
 	t.Helper()
-	if got := r.Header.Get(HTTPHeaderKeyAccept); got != want {
+	if got := req.Header.Get(HTTPHeaderKeyAccept); got != want {
 		t.Errorf("Header.Get(%q) returned %q, want %q", HTTPHeaderKeyAccept, got, want)
 	}
 }
 
-func testMethod(t *testing.T, r *http.Request, want string) {
+func testMethod(t *testing.T, req *http.Request, want string) {
 	t.Helper()
-	if got := r.Method; got != want {
+	if got := req.Method; got != want {
 		t.Errorf("Request method: %v, want %v", got, want)
 	}
 }
@@ -405,7 +405,7 @@ func TestMergeUpstreamSuccess(t *testing.T) {
 	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
-		testMethod(t, req, "POST")
+		testMethod(t, req, http.MethodPost)
 		if !cmp.Equal(rmur, input) {
 			t.Errorf("Request body = %+v, want %+v", rmur, input)
 		}
@@ -450,7 +450,7 @@ func TestMergeUpstreamError(t *testing.T) {
 	srvr.Mux.HandleFunc(wantURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
-		testMethod(t, req, "POST")
+		testMethod(t, req, http.MethodPost)
 		if !cmp.Equal(rmur, input) {
 			t.Errorf("Request body = %+v, want %+v", rmur, input)
 		}
@@ -520,7 +520,7 @@ func TestSyncForksSuccessNoUpdate(t *testing.T) {
 	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
-		testMethod(t, req, "POST")
+		testMethod(t, req, http.MethodPost)
 
 		fmt.Fprint(wtr, `{"message":"This branch is not behind the upstream `+
 			fullBranch+`.","merge_type":"none","base_branch":"`+fullRepo+`"}`)
@@ -652,7 +652,7 @@ func TestSyncForksBadMerge(t *testing.T) {
 	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
-		testMethod(t, req, "POST")
+		testMethod(t, req, http.MethodPost)
 
 		wtr.WriteHeader(http.StatusNotFound)
 	})
@@ -686,7 +686,7 @@ func TestMergeUpstreamForkSuccessNoUpdate(t *testing.T) {
 	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
-		testMethod(t, req, "POST")
+		testMethod(t, req, http.MethodPost)
 
 		fmt.Fprint(wtr, `{"message":"This branch is not behind the upstream `+
 			fullBranch+`.","merge_type":"none","base_branch":"`+fullRepo+`"}`)
@@ -721,7 +721,7 @@ func TestMergeUpstreamForkSuccessFastForward(t *testing.T) {
 	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
-		testMethod(t, req, "POST")
+		testMethod(t, req, http.MethodPost)
 
 		fmt.Fprint(wtr, `{"message":"Successfully fetched and fast-forwarded from upstream `+
 			fullBranch+`.","merge_type":"fast-forward","base_branch":"`+fullRepo+`"}`)
@@ -756,7 +756,7 @@ func TestMergeUpstreamForkSuccessMerge(t *testing.T) {
 	srvr.Mux.HandleFunc(repoMergeURL, func(wtr http.ResponseWriter, req *http.Request) {
 		rmur := new(github.RepoMergeUpstreamRequest)
 		json.NewDecoder(req.Body).Decode(rmur) //nolint:errcheck  // We don't care about the error here
-		testMethod(t, req, "POST")
+		testMethod(t, req, http.MethodPost)
 
 		fmt.Fprint(wtr, `{"message":"Successfully merged from upstream `+
 			fullBranch+`.","merge_type":"merge","base_branch":"`+fullRepo+`"}`)
