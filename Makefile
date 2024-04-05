@@ -6,8 +6,7 @@ BUILD_DIR:=./build
 DIST_DIR:=./dist
 
 APP_NAME:=github-fork-update
-#APP_VERSION:=$(shell git describe --tags)
-APP_VERSION:=$(shell cat .version)
+APP_VERSION:=$(shell git describe --tags)
 
 # subst meta data
 PREFIX:=https://
