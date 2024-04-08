@@ -48,23 +48,16 @@ LINTER_REPORT = $(BUILD_DIR)/golangci-lint-$(BUILD_TS).out
 COVERAGE_REPORT = $(BUILD_DIR)/unit-test-coverage-$(BUILD_TS)
 
 # Rules
+.PHONY: default
+default: help
+
 .PHONY: install
 install:
-	@echo "Installing golangci-lint..."
-	@$(GOINSTALL) github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	@echo "Installing gcov2lcov..."
-	@$(GOINSTALL) github.com/jandelgado/gcov2lcov@latest
-	@echo "Installing gitleaks"
-	@brew install gitleaks || true
-	@echo "Installing pre-commit"
-	@brew install pre-commit || true
+	@echo "install"
+	@./install-deps.sh
 
 .PHONY: init
-init: install
-ifeq (,$(wildcard ./.git/hooks/pre-commit))
-	@echo "Adding pre-commit hook to .git/hooks/pre-commit"
-	ln -s $(shell pwd)/hooks/pre-commit $(shell pwd)/.git/hooks/pre-commit || true
-endif
+init:
 
 .PHONY: clean
 clean:
@@ -72,11 +65,16 @@ clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(DIST_DIR)
 	@rm -f *.pprof
+	@rm -f .DS_Store
+
+.PHONY: goclean
+goclean:
+	@echo "goclean"
 	@$(GOCLEAN) -cache -testcache -fuzzcache -x
 
-.PHONY: cleanall
-cleanall: clean
-	@echo "cleanall"
+.PHONY: godeepclean
+godeepclean:
+	@echo "godeepclean"
 	@$(GOCLEAN) -cache -testcache -fuzzcache -modcache -x
 
 .PHONY: $(BUILD_DIR)
@@ -94,6 +92,8 @@ go.mod:
 	@$(GOMOD) tidy
 	@echo "go mod verify"
 	@$(GOMOD) verify
+	@echo "go mod vendor"
+	@$(GOMOD) vendor
 
 go.sum: go.mod
 
@@ -103,7 +103,7 @@ fmt:
 	@$(GOFMT) ./...
 
 .PHONY: prebuild
-prebuild: init clean $(BUILD_DIR) $(DIST_DIR) go.mod
+prebuild: init clean goclean $(BUILD_DIR) $(DIST_DIR) go.mod
 	@echo "prebuild"
 	$(GOCMD) version
 	$(GOENV)
@@ -122,31 +122,40 @@ lint: golangcilint
 .PHONY: gitleaks
 gitleaks: init $(BUILD_DIR)
 	@echo "Running gitleaks"
-	gitleaks detect --config=gitleaks.toml --source=. --redact --log-level=debug --report-format=json --report-path=$(BUILD_DIR)/gitleaks-$(BUILD_TS).out --verbose
+	gitleaks detect --config=.github/linters/.gitleaks.toml --source=. --redact --log-level=debug --report-format=json \
+	  --report-path=$(BUILD_DIR)/gitleaks-$(BUILD_TS).out --verbose
 
-.PHONY: unittest
-unittest: init $(BUILD_DIR)
-	$(GOENV)
-	$(GOCMD) test -race -coverprofile="$(COVERAGE_REPORT).gcov" -covermode=atomic ./...
-#	cat "$(COVERAGE_REPORT).gcov"
+.PHONY: fuzz
+fuzz: init
+	$(GOTEST) -fuzz=Fuzz -fuzztime 30s ./...
+
+.PHONY: race
+race: init
+	$(GOTEST) -v -race -coverprofile="$(COVERAGE_REPORT).gcov" -covermode=atomic ./...
+	cat "$(COVERAGE_REPORT).gcov"
+
+.PHONY: unit
+unit: init $(BUILD_DIR)
+	$(GOTEST) -v -coverprofile="$(COVERAGE_REPORT).gcov" -covermode=count ./...
+	cat "$(COVERAGE_REPORT).gcov"
 	gcov2lcov -infile "$(COVERAGE_REPORT).gcov" -outfile "$(COVERAGE_REPORT).lcov"
-#	cat "$(COVERAGE_REPORT).lcov"
+	cat "$(COVERAGE_REPORT).lcov"
 	$(GOCMD) tool cover -func="$(COVERAGE_REPORT).gcov"
 #	$(GOCMD) tool cover -html="$(COVERAGE_REPORT).gcov"
 
 .PHONY: tests
-tests: unittest
+tests: unit race # fuzz
 
 .PHONY: gobuild
-gobuild: prebuild lint gitleaks tests
+gobuild: $(DIST_DIR) prebuild lint gitleaks tests
 	$(GOBUILD) $(GOFLAGS) -ldflags="$(LDFLAGS)" -o $(DIST_DIR)/$(APP_NAME) cmd/$(APP_NAME)/main.go
 
 .PHONY: debug
 debug: GOFLAGS += -x -v
-debug: clean gobuild
+debug: clean goclean gobuild
 
 .PHONY: release
-release: cleanall gobuild
+release: clean godeepclean gobuild
 
 .PHONY: pre-commit
 pre-commit: init
@@ -157,14 +166,18 @@ usage:
 	@echo "usage:"
 	@echo "  make [command]"
 	@echo "available commands:"
-	@echo "  clean - clean up build artifacts including 'go clean -cache -testcache -fuzzcache -x'"
-	@echo "  cleanall - same as clean except also performs 'go clean -modcache'"
+	@echo "  clean - clean up build artifacts"
+	@echo "  goclean - call 'go clean -cache -testcache -fuzzcache -x'"
+	@echo "  godeepclean - call 'go clean -cache -testcache -fuzzcache -modcache -x'"
 	@echo "  debug - build debug version of binary"
 	@echo "  help - show usage"
 	@echo "  install - install latest build app dependancies (ie: golangci-lint, gcov2lcov)"
 	@echo "  lint - run all linter checks"
 	@echo "  release - build release version of binary"
-	@echo "  tests - run all tests"
+	@echo "  tests - run all tests  ie: fuzz, race, and unit"
+	@echo "  fuzz - run all fuzz tests"
+	@echo "  race - run all race tests"
+	@echo "  unit - run all unit tests"
 	@echo "  usage - show this information"
 
 .PHONY: help
